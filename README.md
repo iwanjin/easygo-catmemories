@@ -4,9 +4,9 @@ A cute and fun memory card matching game designed for elementary school children
 
 ## 🎮 Play Now
 
-👉 **[Play Memo Cats](https://YOUR_USERNAME.github.io/web_game/)**
+👉 **[Play Memo Cats](https://iwanjin.github.io/easygo-catmemories/)**
 
-> Note: Replace `YOUR_USERNAME` with your actual GitHub username after deploying to GitHub Pages.
+> 🌐 Direct access to the live game on GitHub Pages
 
 ## ✨ Features
 
