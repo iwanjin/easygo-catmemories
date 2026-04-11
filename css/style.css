@@ -1,17 +1,17 @@
 /* ========== 디자인 토큰 ========== */
 :root {
-  --color-bg: #FFF5E1;          /* 부드러운 크림색 배경 */
-  --color-primary: #FF6B9D;     /* 핑크 (초등학생 친화적) */
-  --color-secondary: #6BC5FF;   /* 밝은 하늘색 */
-  --color-accent: #FFD93D;      /* 황금 */
-  --color-text: #3D3D3D;
-  --color-card-back: #FF6B9D;
-  --color-card-front: #FFFFFF;
-  --color-matched: #81E979;     /* 매칭 성공 초록 */
+  --color-bg: #F5F0E8;          /* 부드러운 베이지 배경 */
+  --color-primary: #D8889F;     /* 부드러운 핑크 */
+  --color-secondary: #7DB5D8;   /* 부드러운 하늘색 */
+  --color-accent: #D4AF85;      /* 부드러운 황금 */
+  --color-text: #4A4A4A;
+  --color-card-back: #D8889F;
+  --color-card-front: #FEFDFB;
+  --color-matched: #9BBE8F;     /* 부드러운 초록 */
 
   --radius-lg: 16px;
   --radius-md: 8px;
-  --shadow-card: 0 4px 12px rgba(0,0,0,0.15);
+  --shadow-card: 0 4px 12px rgba(0,0,0,0.12);
   --font-game: 'Comic Sans MS', 'Malgun Gothic', sans-serif;
 }
 
@@ -19,7 +19,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: var(--font-game);
-  background: linear-gradient(135deg, #FFE5F1 0%, #E5F3FF 100%);
+  background: linear-gradient(135deg, #F0E5F5 0%, #E5F0F8 100%);
   min-height: 100vh;
   display: flex;
   justify-content: center;
@@ -142,10 +142,10 @@ body {
 .primary-btn {
   background: var(--color-primary);
   color: white;
-  box-shadow: 0 4px 0 #D44B7D;
+  box-shadow: 0 4px 0 #B5678A;
 }
 
-.primary-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #D44B7D; }
+.primary-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #B5678A; }
 
 /* ========== 반응형 ========== */
 @media (max-width: 600px) {
