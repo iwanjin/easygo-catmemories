@@ -387,3 +387,162 @@ h3 {
     max-width: 720px;
   }
 }
+
+/* ========== 친절한 안내 메시지 ========== */
+
+/* 팁 박스 */
+.tip-box {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFF0E5 100%);
+  border: 2px dashed #D8889F;
+  border-radius: var(--radius-lg);
+  padding: clamp(10px, 2vw, 15px);
+  margin: clamp(10px, 2vw, 15px) 0;
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 1.5vw, 12px);
+  font-size: clamp(13px, 3.5vw, 16px);
+  font-weight: bold;
+  animation: tipBounce 2s infinite;
+}
+
+.tip-emoji {
+  font-size: clamp(20px, 5vw, 28px);
+  display: inline-block;
+}
+
+@keyframes tipBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* 난이도 설명 */
+.difficulty-info {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 2vw, 12px);
+  margin: clamp(10px, 2vw, 15px) 0;
+}
+
+.difficulty-btn {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 1vw, 6px);
+  align-items: center;
+}
+
+.difficulty-desc {
+  font-size: clamp(11px, 2.5vw, 13px);
+  opacity: 0.8;
+  font-weight: normal;
+  color: #666;
+}
+
+.difficulty-btn:hover .difficulty-desc {
+  opacity: 1;
+  color: var(--color-text);
+}
+
+/* 게임 힌트 */
+.game-hint {
+  font-size: clamp(12px, 3vw, 14px);
+  color: #7DB5D8;
+  margin-top: clamp(12px, 2vw, 16px);
+  font-weight: bold;
+  animation: hintGlow 2s ease-in-out infinite;
+}
+
+@keyframes hintGlow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* 게임 중 메시지 */
+.game-message {
+  min-height: clamp(30px, 5vw, 40px);
+  font-size: clamp(14px, 3.5vw, 18px);
+  font-weight: bold;
+  color: #D8889F;
+  margin: clamp(8px, 1.5vw, 12px) 0;
+  animation: messageSlideIn 0.4s ease-out;
+}
+
+@keyframes messageSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 격려 메시지 */
+.game-encouragement {
+  min-height: clamp(25px, 4vw, 35px);
+  font-size: clamp(13px, 3vw, 16px);
+  color: #9BBE8F;
+  margin: clamp(10px, 2vw, 15px) 0;
+  font-weight: bold;
+  animation: encouragementPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes encouragementPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* 결과 화면 */
+.celebration {
+  font-size: clamp(32px, 10vw, 48px);
+  margin: clamp(10px, 2vw, 20px) 0;
+  animation: celebrationBounce 0.6s ease-out;
+}
+
+@keyframes celebrationBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.result-comment {
+  font-size: clamp(14px, 3.5vw, 18px);
+  color: #D8889F;
+  margin: clamp(12px, 2vw, 18px) 0;
+  font-weight: bold;
+  line-height: 1.6;
+}
+
+.result-hint {
+  font-size: clamp(12px, 2.5vw, 14px);
+  color: #7DB5D8;
+  margin-top: clamp(10px, 2vw, 15px);
+  font-weight: bold;
+}
+
+/* 결과 박스 */
+.result-box {
+  background: linear-gradient(135deg, #FFF0E5 0%, #E5F3FF 100%);
+  border-radius: var(--radius-lg);
+  padding: clamp(15px, 3vw, 20px);
+  margin: clamp(15px, 3vw, 20px) 0;
+  box-shadow: 0 4px 15px rgba(216, 136, 159, 0.2);
+}
+
+#final-score, #best-score {
+  font-size: clamp(14px, 3.5vw, 18px);
+  font-weight: bold;
+  color: var(--color-text);
+  margin: clamp(8px, 1.5vw, 10px) 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
