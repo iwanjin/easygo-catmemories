@@ -63,11 +63,28 @@ const UI = (function() {
 
   // 커스텀 이벤트 구독
   function subscribeToGameEvents() {
+    // 게임 상태 업데이트 함수
+    function updateGameDisplay() {
+      const state = Game.getState();
+      updateScore(state.score);
+      updateMoves(state.moves);
+      updateTimer(state.time);
+    }
+
+    // 카드 뒤집기, 매칭, 미스매칭 후 상태 업데이트
+    document.addEventListener('card:flipped', updateGameDisplay);
+    document.addEventListener('card:matched', updateGameDisplay);
+    document.addEventListener('card:mismatched', updateGameDisplay);
+
+    // 게임 우승 시
     document.addEventListener('game:won', (e) => {
       const { score } = e.detail;
       const best = Storage.getBestScore(Game.getState().difficulty);
       showEndScreen(score, best);
     });
+
+    // 타이머 업데이트 (1초마다)
+    setInterval(updateGameDisplay, 1000);
   }
 
   return { showScreen, updateScore, updateMoves, updateTimer,

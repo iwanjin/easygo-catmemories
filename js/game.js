@@ -110,9 +110,9 @@ const Game = (() => {
     // 2. Increment moves
     state.moves++;
 
-    // 3. Get the two flipped card objects
-    const card1 = cardsArray[state.flippedCards[0]];
-    const card2 = cardsArray[state.flippedCards[1]];
+    // 3. Get the two flipped card objects by ID (not by array index)
+    const card1 = cardsArray.find(c => c.id === state.flippedCards[0]);
+    const card2 = cardsArray.find(c => c.id === state.flippedCards[1]);
 
     // 4. Compare emojis
     if (card1.emoji === card2.emoji) {
@@ -218,6 +218,9 @@ const Game = (() => {
 
     // 4. Initialize the game board with card elements
     initializeCards();
+
+    // 4.5. Set the board grid class based on difficulty
+    UI.setBoardClass(difficulty);
 
     // 5. Set game as playing
     state.isPlaying = true;
