@@ -9,14 +9,20 @@
   --color-card-front: #FEFDFB;
   --color-matched: #9BBE8F;     /* 부드러운 초록 */
 
-  --radius-lg: 16px;
-  --radius-md: 8px;
+  --radius-lg: clamp(12px, 2vw, 16px);
+  --radius-md: clamp(6px, 1.5vw, 8px);
   --shadow-card: 0 4px 12px rgba(0,0,0,0.12);
   --font-game: 'Comic Sans MS', 'Malgun Gothic', sans-serif;
 }
 
 /* ========== 기본 레이아웃 ========== */
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-game);
   background: linear-gradient(135deg, #F0E5F5 0%, #E5F0F8 100%);
@@ -25,37 +31,68 @@ body {
   justify-content: center;
   align-items: center;
   color: var(--color-text);
+  padding: clamp(10px, 3vw, 20px);
 }
 
 #app {
-  max-width: 800px;
-  width: 95%;
-  padding: 20px;
+  width: 100%;
+  max-width: clamp(280px, 95vw, 800px);
+  padding: clamp(10px, 3vw, 20px);
 }
 
 .screen { text-align: center; }
 .hidden { display: none !important; }
 
+/* ========== 제목 및 텍스트 ========== */
+.game-title {
+  font-size: clamp(24px, 8vw, 48px);
+  margin: clamp(10px, 2vw, 20px) 0;
+  font-weight: bold;
+}
+
+.subtitle {
+  font-size: clamp(14px, 4vw, 18px);
+  margin: clamp(8px, 1.5vw, 12px) 0;
+  color: #666;
+}
+
+h3 {
+  font-size: clamp(14px, 4vw, 18px);
+  margin: clamp(12px, 2vw, 16px) 0;
+}
+
 /* ========== 게임 보드 그리드 ========== */
 #game-board {
   display: grid;
-  gap: 12px;
+  gap: clamp(6px, 2vw, 12px);
   justify-content: center;
-  padding: 20px;
-  margin: 20px auto;
-  max-width: 600px;
+  padding: clamp(10px, 3vw, 20px);
+  margin: clamp(15px, 3vw, 25px) auto;
+  width: 100%;
+  max-width: 100%;
 }
 
-#game-board.grid-easy { grid-template-columns: repeat(4, 1fr); }
-#game-board.grid-medium { grid-template-columns: repeat(4, 1fr); }
-#game-board.grid-hard { grid-template-columns: repeat(6, 1fr); }
+#game-board.grid-easy {
+  grid-template-columns: repeat(4, 1fr);
+  max-width: clamp(200px, 85vw, 500px);
+}
+
+#game-board.grid-medium {
+  grid-template-columns: repeat(4, 1fr);
+  max-width: clamp(200px, 85vw, 550px);
+}
+
+#game-board.grid-hard {
+  grid-template-columns: repeat(6, 1fr);
+  max-width: clamp(220px, 90vw, 650px);
+}
 
 /* ========== 카드 3D 뒤집기 애니메이션 ========== */
 .card {
   aspect-ratio: 1;
   perspective: 1000px;
   cursor: pointer;
-  min-height: 70px;
+  min-height: clamp(40px, 12vw, 100px);
 }
 
 .card-inner {
@@ -80,7 +117,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(24px, 6vw, 48px);
+  font-size: clamp(20px, 8vw, 48px);
   box-shadow: var(--shadow-card);
 }
 
@@ -92,7 +129,7 @@ body {
 .card-front {
   background: var(--color-card-front);
   transform: rotateY(180deg);
-  border: 3px solid var(--color-primary);
+  border: clamp(2px, 0.5vw, 3px) solid var(--color-primary);
 }
 
 .card.matched .card-front {
@@ -120,36 +157,233 @@ body {
   align-items: center;
   background: white;
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: clamp(10px, 2.5vw, 16px);
   box-shadow: var(--shadow-card);
-  font-size: 18px;
+  font-size: clamp(12px, 3.5vw, 18px);
   font-weight: bold;
+  flex-wrap: wrap;
+  gap: clamp(5px, 1vw, 10px);
+  margin: clamp(10px, 2vw, 15px) 0;
+}
+
+#game-header > div {
+  flex: 1;
+  min-width: clamp(60px, 25vw, 120px);
 }
 
 /* ========== 버튼 ========== */
 .primary-btn, .secondary-btn, .difficulty-btn {
   border: none;
   border-radius: var(--radius-lg);
-  padding: 14px 28px;
-  font-size: 18px;
+  padding: clamp(10px, 2vw, 14px) clamp(20px, 4vw, 28px);
+  font-size: clamp(14px, 3vw, 18px);
   font-weight: bold;
   cursor: pointer;
   font-family: var(--font-game);
   transition: transform 0.1s, box-shadow 0.2s;
-  margin: 8px;
+  margin: clamp(6px, 1.5vw, 8px);
+  white-space: nowrap;
 }
 
 .primary-btn {
   background: var(--color-primary);
   color: white;
   box-shadow: 0 4px 0 #B5678A;
+  width: clamp(160px, 90%, auto);
+  max-width: 280px;
 }
 
-.primary-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #B5678A; }
+.primary-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #B5678A;
+}
 
-/* ========== 반응형 ========== */
-@media (max-width: 600px) {
-  #game-header { font-size: 14px; padding: 10px; }
-  #game-board { gap: 8px; padding: 10px; }
-  .card-back, .card-front { font-size: clamp(20px, 8vw, 36px); }
+.secondary-btn {
+  background: var(--color-secondary);
+  color: white;
+  box-shadow: 0 4px 0 #5A8FB5;
+}
+
+.secondary-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #5A8FB5;
+}
+
+.difficulty-btn {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--color-text);
+  border: 2px solid var(--color-primary);
+  transition: all 0.2s;
+}
+
+.difficulty-btn:hover {
+  background: var(--color-primary);
+  color: white;
+}
+
+.difficulty-btn.active {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: 0 0 0 3px rgba(216, 136, 159, 0.3);
+}
+
+.difficulty-select {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(8px, 2vw, 12px);
+  margin: clamp(15px, 3vw, 25px) 0;
+}
+
+.difficulty-select > div {
+  display: flex;
+  gap: clamp(6px, 1.5vw, 10px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ========== 반응형 미디어 쿼리 ========== */
+
+/* 초소형 모바일 (320px - 374px) */
+@media (max-width: 374px) {
+  body {
+    padding: 8px;
+  }
+
+  #app {
+    padding: 8px;
+  }
+
+  #game-header {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  #game-header > div {
+    width: 100%;
+    text-align: center;
+  }
+
+  .difficulty-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+/* 소형 모바일 (375px - 424px) */
+@media (min-width: 375px) and (max-width: 424px) {
+  #game-header {
+    padding: 12px;
+  }
+
+  .primary-btn {
+    width: 90%;
+  }
+}
+
+/* 중형 모바일 (425px - 599px) */
+@media (min-width: 425px) and (max-width: 599px) {
+  #app {
+    max-width: 95vw;
+  }
+
+  #game-board.grid-easy {
+    max-width: 80vw;
+  }
+
+  #game-board.grid-medium {
+    max-width: 85vw;
+  }
+
+  #game-board.grid-hard {
+    max-width: 90vw;
+  }
+}
+
+/* 태블릿 (600px - 768px) */
+@media (min-width: 600px) and (max-width: 768px) {
+  #app {
+    max-width: 90vw;
+    padding: 25px;
+  }
+
+  #game-header {
+    padding: 18px;
+    font-size: 16px;
+  }
+
+  .primary-btn {
+    padding: 12px 30px;
+    font-size: 16px;
+  }
+
+  #game-board.grid-easy {
+    max-width: 450px;
+  }
+
+  #game-board.grid-medium {
+    max-width: 500px;
+  }
+
+  #game-board.grid-hard {
+    max-width: 600px;
+  }
+}
+
+/* 태블릿 가로 (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+  #app {
+    max-width: 800px;
+    padding: 30px;
+  }
+
+  #game-header {
+    padding: 20px;
+    font-size: 18px;
+  }
+
+  .card {
+    min-height: 85px;
+  }
+
+  #game-board.grid-easy {
+    max-width: 500px;
+  }
+
+  #game-board.grid-medium {
+    max-width: 550px;
+  }
+
+  #game-board.grid-hard {
+    max-width: 680px;
+  }
+}
+
+/* 데스크톱 (1025px+) */
+@media (min-width: 1025px) {
+  #app {
+    max-width: 800px;
+    padding: 30px;
+  }
+
+  #game-header {
+    padding: 20px;
+    font-size: 18px;
+  }
+
+  .card {
+    min-height: 90px;
+  }
+
+  #game-board.grid-easy {
+    max-width: 520px;
+  }
+
+  #game-board.grid-medium {
+    max-width: 580px;
+  }
+
+  #game-board.grid-hard {
+    max-width: 720px;
+  }
 }
