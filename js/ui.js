@@ -66,6 +66,20 @@ const UI = (function() {
     }
   }
 
+  // 막누름 경고 토스트 — 1.4초 보여주고 자동 숨김
+  let mashToastHideTimer = null;
+  function showMashWarning() {
+    const toast = document.getElementById('mash-toast');
+    if (!toast) return;
+    toast.textContent = '🐱 천천히! 신중하게 누르면 더 빨라요';
+    toast.classList.add('is-shown');
+    Sound.play('mismatch');
+    if (mashToastHideTimer) clearTimeout(mashToastHideTimer);
+    mashToastHideTimer = setTimeout(() => {
+      toast.classList.remove('is-shown');
+    }, 1400);
+  }
+
   function showScreen(name) {
     // 'start' | 'game' (end는 모달로 변경됨)
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -441,6 +455,11 @@ const UI = (function() {
     // 게임 우승 시
     document.addEventListener('game:won', (e) => {
       handleGameWon(e.detail);
+    });
+
+    // 막누름 경고
+    document.addEventListener('game:mashWarning', () => {
+      showMashWarning();
     });
 
     // 타이머 업데이트 (1초마다)

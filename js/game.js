@@ -23,6 +23,22 @@ const Game = (() => {
   let cardsArray = [];  // Reference to created cards
   let boardClickHandler = null; // 중복 등록 방지용 참조
 
+  // ==================== 막누름(button mash) 감지 ====================
+  // 디자인 의도: "정말 머리 좋은 친구"는 발동 안 되고, 무지성 연타만 잡는다.
+  //   - 처음 2 페어는 정보가 없으니 그냥 통과 (가드)
+  //   - 최근 3 페어 시도가 모두 미스매치이면서 클릭 간격이 너무 짧으면 발동
+  //     → "기억을 거의 안 쓰고 빠르게만 누르는" 패턴
+  //   - 매칭이 한 번이라도 섞이면 휴리스틱 점수 리셋
+  let cooldownUntil = 0;            // performance.now() 기준, 이 시각까지 클릭 lock
+  let recentClickTimes = [];        // 최근 카드 클릭 시각들 (디버그용/일반 추적)
+  let recentPairIntraTimes = [];    // 각 페어의 "두 클릭 사이" 시간 (intra-pair interval)
+  let recentMatchOutcomes = [];     // 최근 페어 시도 결과 (true=match, false=mismatch)
+  const MASH_RECENT_PAIRS = 3;      // 최근 N 페어를 본다
+  const MASH_INTRA_MS = 320;        // 페어 안 두 클릭 간격 평균이 이 값보다 짧으면 무지성 연타 의심
+  const MASH_GUARD_MOVES = 2;       // 처음 2 페어는 발동 안 함 (정보 부족)
+  const MASH_LOCK_MS = 1200;        // 발동 시 1.2초 lock
+  let lastMashWarnAt = 0;
+
 
   // ==================== Private Functions ====================
 
@@ -77,6 +93,11 @@ const Game = (() => {
     // 0. Pause 중에는 클릭 무시
     if (state.isPaused) return;
 
+    const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+
+    // 0.5. 막누름 cooldown 중이면 무시 (자동으로 풀림)
+    if (now < cooldownUntil) return;
+
     // 1. Check if game is locked (cards are being compared)
     if (state.isLocked) return;
 
@@ -94,8 +115,23 @@ const Game = (() => {
     // 4. Flip the card using Cards module
     Cards.flip(cardId);
 
+    // 4.5 막누름 감지용 클릭 시각 기록 (최근 6번만 유지)
+    recentClickTimes.push(now);
+    if (recentClickTimes.length > 6) recentClickTimes.shift();
+
     // 5. Add cardId to flippedCards array
     state.flippedCards.push(cardId);
+
+    // 5.5 페어 두 번째 클릭이면 intra-pair interval 기록
+    //     (lock 해제 대기 시간과 무관한 "사고 시간" 측정)
+    if (state.flippedCards.length === 2 && recentClickTimes.length >= 2) {
+      const last = recentClickTimes[recentClickTimes.length - 1];
+      const prev = recentClickTimes[recentClickTimes.length - 2];
+      recentPairIntraTimes.push(last - prev);
+      if (recentPairIntraTimes.length > MASH_RECENT_PAIRS) {
+        recentPairIntraTimes.shift();
+      }
+    }
 
     // 6. Emit 'card:flipped' custom event
     document.dispatchEvent(new CustomEvent('card:flipped', {
@@ -133,6 +169,9 @@ const Game = (() => {
       state.matched += 2;
       state.score += 100;
 
+      // 막누름 추적: 매칭 성공 → 휴리스틱 윈도우에 true 기록
+      pushMatchOutcome(true);
+
       // Emit 'card:matched' event
       document.dispatchEvent(new CustomEvent('card:matched', {
         detail: { cardIds: state.flippedCards }
@@ -145,6 +184,10 @@ const Game = (() => {
       checkWin();
     } else {
       // === MATCH FAILURE ===
+      // 막누름 추적: 미스매치 기록 + mash 휴리스틱 평가
+      pushMatchOutcome(false);
+      maybeTriggerMashWarning();
+
       // Wait 1 second, then unflip both cards
       setTimeout(() => {
         Cards.unflip(state.flippedCards[0]);
@@ -162,6 +205,50 @@ const Game = (() => {
         state.isLocked = false;
       }, 1000);
     }
+  }
+
+  function pushMatchOutcome(wasMatch) {
+    recentMatchOutcomes.push(!!wasMatch);
+    if (recentMatchOutcomes.length > MASH_RECENT_PAIRS) {
+      recentMatchOutcomes.shift();
+    }
+  }
+
+  /**
+   * 막누름 의심 휴리스틱:
+   *   - 가드: state.moves <= MASH_GUARD_MOVES면 발동 안 함 (정보 부족 단계)
+   *   - 최근 N(=3) 페어가 모두 미스매치 (매칭 0건)
+   *   - 최근 N 페어의 "페어 안 두 클릭 시간차" 평균이 MASH_INTRA_MS 미만
+   *     (lock 시간 1초와 무관하게, 두 카드 사이 "사고 시간"만 본다)
+   *   → 모두 만족 시 cooldown 발동 + 'game:mashWarning' 이벤트 디스패치 (UI는 토스트/사운드 처리)
+   *
+   * 머리 좋은 친구: 매칭률이 높으니 allMiss 조건 미충족 → 발동 안 함.
+   * 무지성 연타: 두 카드 사이 거의 사고 없이 빠르게 → 평균 intra가 매우 짧음 → 발동.
+   */
+  function maybeTriggerMashWarning() {
+    if (state.moves <= MASH_GUARD_MOVES) return;
+    if (recentMatchOutcomes.length < MASH_RECENT_PAIRS) return;
+    if (recentPairIntraTimes.length < MASH_RECENT_PAIRS) return;
+
+    const allMiss = recentMatchOutcomes.every(o => !o);
+    if (!allMiss) return;
+
+    const avgIntra =
+      recentPairIntraTimes.reduce((a, b) => a + b, 0) / recentPairIntraTimes.length;
+    if (avgIntra >= MASH_INTRA_MS) return;
+
+    // 발동
+    const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    cooldownUntil = now + MASH_LOCK_MS;
+    lastMashWarnAt = now;
+
+    document.dispatchEvent(new CustomEvent('game:mashWarning', {
+      detail: { lockMs: MASH_LOCK_MS, avgIntra: Math.round(avgIntra) }
+    }));
+
+    // 다음 발동 전에 휴리스틱 윈도우 부분 리셋 (한 번 잡고 풀어줌)
+    recentMatchOutcomes = [];
+    recentPairIntraTimes = [];
   }
 
   /**
@@ -218,6 +305,12 @@ const Game = (() => {
     state.matched = 0;
     state.flippedCards = [];
     state.isLocked = false;
+
+    // 막누름 휴리스틱 상태 리셋
+    cooldownUntil = 0;
+    recentClickTimes = [];
+    recentPairIntraTimes = [];
+    recentMatchOutcomes = [];
 
     // 2. Get difficulty config from C team's Difficulty module
     const config = Difficulty.getConfig(difficulty);
