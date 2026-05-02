@@ -80,11 +80,16 @@ const Game = (() => {
     // 1. Check if game is locked (cards are being compared)
     if (state.isLocked) return;
 
+    // 셔플 이후 cardsArray의 인덱스와 카드의 id는 일치하지 않으므로
+    // 반드시 id로 조회해야 한다 (예전엔 cardsArray[cardId]로 잘못 접근).
+    const card = cardsArray.find(c => c.id === cardId);
+    if (!card) return;
+
     // 2. Check if card is already flipped
-    if (cardsArray[cardId].isFlipped) return;
+    if (card.isFlipped) return;
 
     // 3. Check if card is already matched
-    if (cardsArray[cardId].isMatched) return;
+    if (card.isMatched) return;
 
     // 4. Flip the card using Cards module
     Cards.flip(cardId);
