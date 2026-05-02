@@ -1,5 +1,5 @@
 const UI = (function() {
-  let selectedDifficulty = 'medium';
+  let selectedDifficulty = 'easy';
 
   // 귀여운 메시지 모음
   const messages = {
@@ -112,6 +112,69 @@ const UI = (function() {
     Modal.open('end-modal');
   }
 
+  // 마지막 게임 결과를 보관 (TOP10 진입 시 이름 입력 → 저장에 사용)
+  let lastResult = null;
+
+  function formatTimeStr(seconds) {
+    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+    const s = String(seconds % 60).padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function refreshBestScoreSummary() {
+    const all = Storage.getAllBestScores();
+    ['easy', 'medium', 'hard'].forEach((d) => {
+      const el = document.getElementById(`best-summary-${d}`);
+      if (el) {
+        el.textContent = (all[d] || 0).toLocaleString();
+      }
+    });
+  }
+
+  function showNameInputModal(rank, result) {
+    const badge = document.getElementById('new-rank-badge');
+    const stats = document.getElementById('new-rank-stats');
+    const input = document.getElementById('player-name-input');
+    if (badge) badge.textContent = `${rank}위`;
+    if (stats) {
+      stats.innerHTML = `
+        <span>🎯 ${result.score.toLocaleString()}점</span>
+        <span>⏱ ${formatTimeStr(result.time)}</span>
+        <span>🔄 ${result.moves}회</span>
+      `;
+    }
+    if (input) {
+      input.value = '';
+    }
+    Modal.open('name-input-modal');
+    if (input) {
+      setTimeout(() => input.focus(), 80);
+    }
+    // 팡파레!
+    Sound.play('fanfare');
+  }
+
+  function handleGameWon(detail) {
+    const { score, time, moves } = detail;
+    const difficulty = Game.getState().difficulty;
+    const best = Storage.getBestScore(difficulty);
+    Storage.saveBestScore(difficulty, score);
+    refreshBestScoreSummary();
+
+    const result = { score, time, moves, difficulty };
+    lastResult = result;
+
+    // TOP10 진입 여부 평가 (이름은 아직 모름)
+    const rank = Storage.calcRank(difficulty, { score, time, moves });
+    if (rank > 0) {
+      // 진입! 이름 입력 모달로 직진 (end-modal 건너뜀)
+      showNameInputModal(rank, result);
+    } else {
+      // 일반 종료 모달
+      showEndScreen(score, Math.max(best, score));
+    }
+  }
+
   // 이벤트 리스너 초기화 (시작 버튼, 재시작 등)
   function bindEvents() {
     // 난이도 버튼 클릭
@@ -128,6 +191,10 @@ const UI = (function() {
         showTip();
       });
     });
+
+    // 기본 선택된 난이도(easy) 시각적 표시
+    const defaultBtn = document.querySelector(`.difficulty-btn[data-difficulty="${selectedDifficulty}"]`);
+    if (defaultBtn) defaultBtn.classList.add('active');
 
     // 시작 버튼 → Game.start()
     document.getElementById('start-btn').addEventListener('click', () => {
@@ -191,7 +258,85 @@ const UI = (function() {
         Sound.play('click');
         Modal.close();
         Game.reset();
+        refreshBestScoreSummary();
         showScreen('start');
+      });
+    }
+
+    // 종료 모달의 "🏆 순위 보기" 버튼
+    const showLb = document.getElementById('show-leaderboard-btn');
+    if (showLb) {
+      showLb.addEventListener('click', () => {
+        Sound.play('click');
+        Modal.close();
+        const diff = (lastResult && lastResult.difficulty) || Game.getState().difficulty || 'easy';
+        // 약간의 텀을 두고 리더보드 모달 (모달 전환 애니메이션 안 깨지게)
+        setTimeout(() => Leaderboard.open({
+          difficulty: diff,
+          onClose: returnToStartAfterGame
+        }), 280);
+      });
+    }
+  }
+
+  // 게임 종료 흐름 끝나면 시작 화면으로 복귀
+  function returnToStartAfterGame() {
+    Game.reset();
+    refreshBestScoreSummary();
+    showScreen('start');
+  }
+
+  // 리더보드/이름입력 관련 바인딩
+  function bindLeaderboard() {
+    Leaderboard.bind();
+
+    // 시작 화면의 "명예의 전당 보기"
+    const openBtn = document.getElementById('open-leaderboard-btn');
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        Sound.play('click');
+        Leaderboard.open({ difficulty: selectedDifficulty });
+      });
+    }
+
+    // 이름 입력 폼
+    const form = document.getElementById('name-input-form');
+    const skip = document.getElementById('skip-name-btn');
+    const input = document.getElementById('player-name-input');
+
+    function commitName(name) {
+      if (!lastResult) {
+        Modal.close();
+        return;
+      }
+      const finalName = (name || '').trim() || '익명';
+      const r = Storage.addToLeaderboard(lastResult.difficulty, {
+        name: finalName,
+        score: lastResult.score,
+        time: lastResult.time,
+        moves: lastResult.moves
+      });
+      Modal.close();
+      const diff = lastResult.difficulty;
+      lastResult = null;
+      setTimeout(() => {
+        const opts = { difficulty: diff, onClose: returnToStartAfterGame };
+        if (r > 0) opts.highlight = { difficulty: diff, rank: r };
+        Leaderboard.open(opts);
+      }, 280);
+    }
+
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        Sound.play('match'); // 저장 효과음
+        commitName(input ? input.value : '');
+      });
+    }
+    if (skip) {
+      skip.addEventListener('click', () => {
+        Sound.play('click');
+        commitName('익명');
       });
     }
   }
@@ -295,9 +440,7 @@ const UI = (function() {
 
     // 게임 우승 시
     document.addEventListener('game:won', (e) => {
-      const { score } = e.detail;
-      const best = Storage.getBestScore(Game.getState().difficulty);
-      showEndScreen(score, best);
+      handleGameWon(e.detail);
     });
 
     // 타이머 업데이트 (1초마다)
@@ -306,5 +449,5 @@ const UI = (function() {
 
   return { showScreen, updateScore, updateMoves, updateTimer,
            setBoardClass, showEndScreen, bindEvents, subscribeToGameEvents,
-           bindSoundSettings };
+           bindSoundSettings, bindLeaderboard, refreshBestScoreSummary };
 })();

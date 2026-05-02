@@ -248,6 +248,42 @@ const Sound = (function () {
         // UI 클릭 (고양이 소리 X — 짧은 톡)
         tone(680, 0.04, 'sine', 500, 0.2);
         break;
+
+      case 'fanfare': {
+        // TOP10 진입 팡파레: 트럼펫 풍 단순 톤 + 키튼 합창 동시
+        // 1) 짧은 트럼펫 멜로디 (도-미-솔-도-솔-도')
+        const fanfareNotes = [
+          { f: 523.25, t: 0,    d: 0.18 }, // C5
+          { f: 659.25, t: 130,  d: 0.18 }, // E5
+          { f: 783.99, t: 260,  d: 0.18 }, // G5
+          { f: 1046.5, t: 390,  d: 0.32 }, // C6
+          { f: 783.99, t: 720,  d: 0.16 }, // G5
+          { f: 1046.5, t: 870,  d: 0.5 }   // C6 (끝)
+        ];
+        fanfareNotes.forEach((n) => {
+          setTimeout(() => tone(n.f, n.d, 'square', null, 0.25), n.t);
+        });
+        // 2) 동시에 키튼 합창
+        const cheers = [
+          { startFreq: 700, peakFreq: 1200, endFreq: 950, duration: 0.28, t: 100 },
+          { startFreq: 850, peakFreq: 1400, endFreq: 1050, duration: 0.28, t: 350 },
+          { startFreq: 1000, peakFreq: 1600, endFreq: 1200, duration: 0.32, t: 600 },
+          { startFreq: 1100, peakFreq: 1800, endFreq: 1300, duration: 0.45, t: 950 }
+        ];
+        cheers.forEach((c) => {
+          setTimeout(() => meow({
+            startFreq: c.startFreq,
+            peakFreq: c.peakFreq,
+            endFreq: c.endFreq,
+            duration: c.duration,
+            gain: 0.36,
+            formant1: 1700,
+            formant2: 3000,
+            vibrato: 9
+          }), c.t);
+        });
+        break;
+      }
     }
   }
 
