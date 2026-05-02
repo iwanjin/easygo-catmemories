@@ -19,7 +19,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   overflow-x: hidden;
 }
 
@@ -31,13 +31,17 @@ body {
   justify-content: center;
   align-items: flex-start;
   color: var(--color-text);
-  padding: clamp(6px, 1.5vw, 14px);
+  padding: 0 clamp(4px, 1vw, 10px);
 }
 
 #app {
   width: 100%;
-  max-width: clamp(280px, 95vw, 720px);
-  padding: clamp(6px, 1.5vw, 12px);
+  max-width: clamp(280px, 95vw, 760px);
+  padding: 0;
+}
+
+#start-screen, #game-screen {
+  padding: clamp(4px, 1vw, 10px) clamp(6px, 1.5vw, 14px) clamp(12px, 3vw, 20px);
 }
 
 .screen { text-align: center; }
@@ -45,20 +49,20 @@ body {
 
 /* ========== 제목 및 텍스트 ========== */
 .game-title {
-  font-size: clamp(20px, 6vw, 36px);
-  margin: clamp(4px, 1vw, 8px) 0;
+  font-size: clamp(24px, 7vw, 42px);
+  margin: clamp(6px, 1.5vw, 10px) 0 clamp(2px, 0.5vw, 4px);
   font-weight: bold;
 }
 
 .subtitle {
-  font-size: clamp(12px, 3vw, 15px);
-  margin: clamp(2px, 0.5vw, 5px) 0 clamp(4px, 1vw, 8px);
+  font-size: clamp(13px, 3.2vw, 16px);
+  margin: clamp(2px, 0.5vw, 5px) 0 clamp(6px, 1.4vw, 10px);
   color: #666;
 }
 
 h3 {
-  font-size: clamp(13px, 3.2vw, 16px);
-  margin: clamp(6px, 1.4vw, 10px) 0 clamp(4px, 1vw, 8px);
+  font-size: clamp(14px, 3.4vw, 17px);
+  margin: clamp(8px, 1.8vw, 12px) 0 clamp(6px, 1.4vw, 10px);
 }
 
 /* ========== 게임 보드 그리드 ========== */
@@ -175,8 +179,8 @@ h3 {
 .primary-btn, .secondary-btn, .difficulty-btn {
   border: none;
   border-radius: var(--radius-lg);
-  padding: clamp(8px, 1.6vw, 12px) clamp(16px, 3.5vw, 24px);
-  font-size: clamp(13px, 2.8vw, 16px);
+  padding: clamp(11px, 2.3vw, 16px) clamp(20px, 4.5vw, 32px);
+  font-size: clamp(14px, 3.2vw, 18px);
   font-weight: bold;
   cursor: pointer;
   font-family: var(--font-game);
@@ -420,8 +424,9 @@ h3 {
 .difficulty-info {
   display: flex;
   flex-direction: column;
-  gap: clamp(4px, 1vw, 6px);
-  margin: clamp(4px, 1vw, 8px) 0;
+  gap: clamp(6px, 1.4vw, 10px);
+  margin: clamp(6px, 1.5vw, 10px) 0;
+  align-items: center;
 }
 
 .difficulty-btn {
@@ -431,11 +436,12 @@ h3 {
   flex-direction: column;
   gap: clamp(2px, 0.5vw, 4px);
   align-items: center;
-  padding: clamp(6px, 1.2vw, 10px) clamp(14px, 3vw, 20px);
+  padding: clamp(8px, 1.5vw, 11px) clamp(16px, 3.2vw, 22px);
+  min-width: clamp(180px, 60vw, 260px);
 }
 
 .difficulty-desc {
-  font-size: clamp(10px, 2.2vw, 12px);
+  font-size: clamp(11px, 2.5vw, 13px);
   opacity: 0.8;
   font-weight: normal;
   color: #666;
@@ -813,22 +819,77 @@ h3 {
 
 .cat-village-bg {
   position: relative;
-  width: 100%;
-  height: clamp(110px, 18vw, 150px);
-  margin: 0 auto clamp(2px, 0.6vw, 6px);
-  border-radius: clamp(12px, 2.5vw, 18px);
+  /* viewport 가로 100% 차지 (#app/body padding 무시) */
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  margin-top: 0;
+  margin-bottom: clamp(8px, 2vw, 14px);
+  /* viewport h 기반: 작은 화면에선 작게, 큰 화면에선 충분히 크게.
+     너무 길어 콘텐츠를 밀어내지 않도록 max 200 제한. */
+  height: clamp(110px, 16vh, 200px);
+  border-radius: 0 0 clamp(18px, 4vw, 28px) clamp(18px, 4vw, 28px);
   overflow: hidden;
-  box-shadow: 0 4px 14px rgba(160, 130, 165, 0.15);
+  box-shadow: 0 6px 18px rgba(160, 130, 165, 0.18);
   /* SVG meet으로 잘림 없이 표시되며, 비율 차이로 생기는 양옆 빈 영역에는
      SVG의 sky 그라디언트와 동일한 색을 깔아 자연스럽게 잇는다. */
   background: linear-gradient(180deg, #FFD9E8 0%, #F3D9F5 55%, #D9C7F0 100%);
 }
 
-/* 매우 짧은 화면(노트북) 추가 콤팩트 */
-@media (max-height: 820px) {
-  .cat-village-bg { height: clamp(90px, 14vw, 120px); }
-  .game-title { font-size: clamp(18px, 4.5vw, 26px); margin: 2px 0; }
+/* 노트북·태블릿 가로 모드 (h ≤ 800 + w ≥ 768): 난이도 3개를 가로 배치하여 fit */
+@media (max-height: 800px) and (min-width: 768px) {
+  .cat-village-bg { height: clamp(110px, 16vh, 160px); }
   .subtitle { display: none; }
+  .game-hint { display: none; }
+  .difficulty-desc { display: none; }
+  .difficulty-info {
+    flex-direction: row;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: clamp(8px, 1.5vw, 12px);
+  }
+  .difficulty-btn {
+    min-width: clamp(140px, 22vw, 200px);
+    padding: clamp(8px, 1.4vw, 12px) clamp(14px, 2.4vw, 20px);
+  }
+  .game-title { font-size: clamp(22px, 4.5vw, 32px); margin: 4px 0; }
+  h3 { margin: 8px 0 4px; }
+}
+
+/* 매우 짧은 모바일 (h ≤ 600) — 320x568 같은 옛 단말 */
+@media (max-height: 600px) {
+  .cat-village-bg { height: 80px; }
+  .subtitle { display: none; }
+  .game-hint { display: none; }
+  .difficulty-desc { display: none; }
+  .game-title { font-size: 20px; margin: 2px 0; }
+  .bss-heading { font-size: 11px; margin: 0 0 3px; }
+  .best-score-card { padding: 4px 6px; }
+  .bsc-icon { font-size: 14px; }
+  .bsc-label { font-size: 10px; margin-top: 1px; }
+  .bsc-value { font-size: 13px; margin-top: 1px; }
+  h3 { font-size: 13px; margin: 4px 0 3px; }
+  .difficulty-btn {
+    padding: 5px 14px;
+    font-size: 13px;
+    gap: 0;
+    min-width: 200px;
+  }
+  .difficulty-info { gap: 4px; margin: 3px 0; }
+  .start-actions { margin: 5px 0 0; }
+  .primary-btn, .secondary-btn { padding: 7px 18px; font-size: 13px; }
+  .start-actions .primary-btn { min-width: 110px; }
+  .ghost-btn { padding: 7px 14px; font-size: 12px; min-width: 110px; }
+}
+
+/* 작은 모바일 가로폭 (≤ 360) — 콤팩트 */
+@media (max-width: 360px) {
+  .difficulty-desc { display: none; }
+  .bss-heading { font-size: 12px; }
+}
+
+/* 짧은 모바일 (iPhone SE급, h ≤ 700 + 모바일 폭) — game-hint 숨김 */
+@media (max-height: 700px) and (max-width: 767px) {
   .game-hint { display: none; }
   .difficulty-desc { display: none; }
 }
@@ -874,11 +935,15 @@ h3 {
 
 .cat-tail-wag {
   animation: villageTailWag 1.4s ease-in-out infinite;
-  transform-origin: center;
+  /* fill-box: path 자체의 bounding box 기준 좌표계.
+     0% 100% = bbox 좌하단. 꼬리 path는 시작점이 (좌, 아래)이므로
+     이 origin이 회전축이 되어 꼬리가 몸에 붙은 채 옆으로 살랑살랑 흔들린다. */
+  transform-box: fill-box;
+  transform-origin: 0% 100%;
 }
 @keyframes villageTailWag {
-  0%, 100% { transform: rotate(0deg); }
-  50%      { transform: rotate(-12deg); }
+  0%, 100% { transform: rotate(-3deg); }
+  50%      { transform: rotate(8deg); }
 }
 
 .start-screen-content {
@@ -888,25 +953,25 @@ h3 {
 
 /* ========== 시작 화면: 난이도별 최고 점수 위젯 ========== */
 .best-score-summary-wrap {
-  margin: clamp(4px, 1vw, 8px) auto clamp(6px, 1.2vw, 10px);
-  max-width: clamp(260px, 90vw, 480px);
+  margin: clamp(6px, 1.4vw, 10px) auto clamp(8px, 1.8vw, 14px);
+  max-width: clamp(280px, 92vw, 540px);
 }
 .bss-heading {
-  font-size: clamp(11px, 2.7vw, 13px);
+  font-size: clamp(12px, 3vw, 15px);
   color: #888;
   font-weight: 600;
-  margin: 0 0 clamp(3px, 0.8vw, 6px);
+  margin: 0 0 clamp(4px, 1vw, 8px);
   letter-spacing: 0.2px;
 }
 .best-score-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: clamp(5px, 1.2vw, 8px);
+  gap: clamp(6px, 1.5vw, 12px);
 }
 .best-score-card {
   background: white;
   border-radius: clamp(10px, 2vw, 14px);
-  padding: clamp(5px, 1.2vw, 8px) clamp(4px, 1vw, 8px);
+  padding: clamp(8px, 1.8vw, 14px) clamp(6px, 1.4vw, 12px);
   text-align: center;
   box-shadow: 0 2px 8px rgba(170, 140, 170, 0.15);
   border: 2px solid transparent;
@@ -917,27 +982,27 @@ h3 {
   border-color: var(--color-primary);
 }
 .bsc-icon {
-  font-size: clamp(13px, 3.2vw, 18px);
+  font-size: clamp(15px, 3.6vw, 22px);
   line-height: 1;
 }
 .bsc-label {
-  font-size: clamp(10px, 2.3vw, 12px);
+  font-size: clamp(11px, 2.6vw, 13px);
   color: #777;
-  margin-top: 2px;
+  margin-top: 3px;
   font-weight: 600;
 }
 .bsc-value {
-  font-size: clamp(13px, 3.2vw, 16px);
+  font-size: clamp(15px, 3.6vw, 19px);
   color: var(--color-primary);
   font-weight: bold;
-  margin-top: 2px;
+  margin-top: 3px;
   display: flex;
   align-items: baseline;
   justify-content: center;
   gap: 1px;
 }
 .bsc-unit {
-  font-size: clamp(10px, 2.3vw, 12px);
+  font-size: clamp(11px, 2.5vw, 13px);
   font-weight: normal;
   color: #999;
   margin-left: 1px;
@@ -946,12 +1011,12 @@ h3 {
 /* 시작 화면 액션 그룹 (게임시작 + 명예의 전당 한 줄) */
 .start-actions {
   display: flex;
-  gap: clamp(6px, 1.5vw, 10px);
+  gap: clamp(8px, 1.8vw, 14px);
   justify-content: center;
   flex-wrap: wrap;
-  margin: clamp(4px, 1vw, 8px) 0 clamp(2px, 0.5vw, 4px);
+  margin: clamp(8px, 2vw, 14px) 0 clamp(4px, 1vw, 8px);
 }
-.start-actions .primary-btn { width: auto; min-width: clamp(120px, 32vw, 180px); }
+.start-actions .primary-btn { width: auto; min-width: clamp(140px, 38vw, 200px); }
 
 /* 명예의 전당 보기 — 보조 톤 다운 버튼 */
 .ghost-btn {
@@ -959,9 +1024,9 @@ h3 {
   border: 2px solid var(--color-accent);
   color: var(--color-text);
   margin: 0;
-  padding: clamp(6px, 1.4vw, 10px) clamp(12px, 2.6vw, 18px);
-  font-size: clamp(12px, 2.8vw, 14px);
-  min-width: clamp(120px, 32vw, 180px);
+  padding: clamp(10px, 2.1vw, 14px) clamp(16px, 3.5vw, 24px);
+  font-size: clamp(13px, 3vw, 16px);
+  min-width: clamp(140px, 38vw, 200px);
 }
 .ghost-btn:hover {
   background: var(--color-accent);
