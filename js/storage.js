@@ -36,11 +36,26 @@ const Storage = (function() {
     localStorage.setItem(key, String(muted));
   }
 
+  function getVolume() {
+    const key = `${PREFIX}volume`;
+    const stored = localStorage.getItem(key);
+    if (stored === null) return null;
+    const v = parseFloat(stored);
+    return isNaN(v) ? null : v;
+  }
+
+  function setVolume(volume) {
+    const key = `${PREFIX}volume`;
+    localStorage.setItem(key, String(volume));
+  }
+
   return {
     saveBestScore,
     getBestScore,
     getAllBestScores,
     isMuted,
-    setMuted
+    setMuted,
+    getVolume,
+    setVolume
   };
 })();

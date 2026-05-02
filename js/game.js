@@ -14,12 +14,14 @@ const Game = (() => {
     matched: 0,
     total: 0,
     isPlaying: false,
+    isPaused: false,
     flippedCards: [],    // 현재 뒤집혀있는 카드 (최대 2장)
     isLocked: false      // 카드 비교 중 클릭 방지
   };
 
   let timerInterval = null;
   let cardsArray = [];  // Reference to created cards
+  let boardClickHandler = null; // 중복 등록 방지용 참조
 
 
   // ==================== Private Functions ====================
@@ -72,6 +74,9 @@ const Game = (() => {
    * Processes card flipping, matching logic, and event emission
    */
   function handleCardClick(cardId) {
+    // 0. Pause 중에는 클릭 무시
+    if (state.isPaused) return;
+
     // 1. Check if game is locked (cards are being compared)
     if (state.isLocked) return;
 
@@ -226,14 +231,18 @@ const Game = (() => {
     state.isPlaying = true;
 
     // 6. Register click listener on game-board using event delegation
+    //    이전에 등록된 핸들러가 있으면 제거 (중복 등록 방지)
     const gameBoard = document.getElementById('game-board');
-    gameBoard.addEventListener('click', (e) => {
+    if (boardClickHandler) {
+      gameBoard.removeEventListener('click', boardClickHandler);
+    }
+    boardClickHandler = (e) => {
       const cardElement = e.target.closest('.card');
       if (!cardElement) return;
-
       const cardId = Number(cardElement.dataset.cardId);
       handleCardClick(cardId);
-    });
+    };
+    gameBoard.addEventListener('click', boardClickHandler);
 
     // 7. Start the timer
     startTimer();
@@ -261,6 +270,7 @@ const Game = (() => {
     state.matched = 0;
     state.total = 0;
     state.isPlaying = false;
+    state.isPaused = false;
     state.flippedCards = [];
     state.isLocked = false;
 
@@ -281,10 +291,33 @@ const Game = (() => {
   }
 
 
+  /**
+   * pause() - 타이머/입력 일시정지
+   */
+  function pause() {
+    if (!state.isPlaying || state.isPaused) return;
+    state.isPaused = true;
+    stopTimer();
+    document.dispatchEvent(new CustomEvent('game:paused'));
+  }
+
+  /**
+   * resume() - 타이머/입력 재개
+   */
+  function resume() {
+    if (!state.isPlaying || !state.isPaused) return;
+    state.isPaused = false;
+    startTimer();
+    document.dispatchEvent(new CustomEvent('game:resumed'));
+  }
+
+
   // ==================== Return Public API ====================
   return {
     start,
     reset,
+    pause,
+    resume,
     getState
   };
 })();

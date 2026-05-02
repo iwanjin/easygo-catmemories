@@ -67,9 +67,10 @@ const UI = (function() {
   }
 
   function showScreen(name) {
-    // 'start' | 'game' | 'end'
+    // 'start' | 'game' (end는 모달로 변경됨)
     document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
-    document.getElementById(`${name}-screen`).classList.remove('hidden');
+    const target = document.getElementById(`${name}-screen`);
+    if (target) target.classList.remove('hidden');
 
     if (name === 'start') {
       showTip();
@@ -107,7 +108,8 @@ const UI = (function() {
       resultComment.textContent = getRandomMessage('result');
     }
 
-    showScreen('end');
+    // 게임 화면을 유지한 채 모달로 띄움 (팝업 효과)
+    Modal.open('end-modal');
   }
 
   // 이벤트 리스너 초기화 (시작 버튼, 재시작 등)
@@ -129,21 +131,139 @@ const UI = (function() {
 
     // 시작 버튼 → Game.start()
     document.getElementById('start-btn').addEventListener('click', () => {
+      Sound.play('click');
       Game.start(selectedDifficulty);
       showScreen('game');
     });
 
     // 재시작 → Game.reset() + start()
     document.getElementById('restart-btn').addEventListener('click', () => {
+      Sound.play('click');
       Game.reset();
       Game.start(selectedDifficulty);
       showGameMessage('🎮 다시 시작했어요! 화이팅! 💪');
     });
 
-    // 한번 더 → 시작 화면으로
+    // 일시정지
+    const pauseBtn = document.getElementById('pause-btn');
+    if (pauseBtn) {
+      pauseBtn.addEventListener('click', () => {
+        Sound.play('click');
+        Game.pause();
+        Modal.open('pause-modal');
+      });
+    }
+
+    // 계속하기 (일시정지 모달)
+    const resumeBtn = document.getElementById('resume-btn');
+    if (resumeBtn) {
+      resumeBtn.addEventListener('click', () => {
+        Sound.play('click');
+        Modal.close();
+        Game.resume();
+      });
+    }
+
+    // 처음으로 (일시정지 모달)
+    const quitBtn = document.getElementById('quit-btn');
+    if (quitBtn) {
+      quitBtn.addEventListener('click', () => {
+        Sound.play('click');
+        Modal.close();
+        Game.reset();
+        showScreen('start');
+      });
+    }
+
+    // 한번 더 → 같은 난이도로 다시 시작
     document.getElementById('play-again-btn').addEventListener('click', () => {
-      showScreen('start');
+      Sound.play('click');
+      Modal.close();
+      Game.reset();
+      Game.start(selectedDifficulty);
+      showScreen('game');
     });
+
+    // 처음 화면으로 (종료 모달)
+    const backToStartBtn = document.getElementById('back-to-start-btn');
+    if (backToStartBtn) {
+      backToStartBtn.addEventListener('click', () => {
+        Sound.play('click');
+        Modal.close();
+        Game.reset();
+        showScreen('start');
+      });
+    }
+  }
+
+  // 음향 설정 관련 바인딩 (별도 함수로 분리 — DOM 준비 후 호출)
+  function bindSoundSettings() {
+    const settingsBtn = document.getElementById('sound-settings-btn');
+    const soundIcon = document.getElementById('sound-icon');
+    const muteToggle = document.getElementById('mute-toggle');
+    const muteIcon = document.getElementById('mute-icon');
+    const muteText = muteToggle ? muteToggle.querySelector('.toggle-text') : null;
+    const volumeSlider = document.getElementById('volume-slider');
+    const volumeValue = document.getElementById('volume-value');
+    const okBtn = document.getElementById('sound-modal-ok');
+
+    function refreshUI() {
+      const muted = Sound.isMuted();
+      const vol = Sound.getVolume();
+      if (soundIcon) soundIcon.textContent = muted ? '🔇' : '🔊';
+      if (muteIcon) muteIcon.textContent = muted ? '🔇' : '🔊';
+      if (muteToggle) {
+        muteToggle.setAttribute('aria-pressed', String(muted));
+        muteToggle.classList.toggle('is-off', muted);
+      }
+      if (muteText) muteText.textContent = muted ? '꺼짐' : '켜짐';
+      if (volumeSlider) volumeSlider.value = String(Math.round(vol * 100));
+      if (volumeValue) volumeValue.textContent = String(Math.round(vol * 100));
+    }
+
+    if (settingsBtn) {
+      settingsBtn.addEventListener('click', () => {
+        refreshUI();
+        Modal.open('sound-modal');
+      });
+    }
+
+    if (muteToggle) {
+      muteToggle.addEventListener('click', () => {
+        Sound.toggleMute();
+        refreshUI();
+        if (!Sound.isMuted()) Sound.play('click');
+      });
+    }
+
+    if (volumeSlider) {
+      volumeSlider.addEventListener('input', (e) => {
+        const v = Number(e.target.value) / 100;
+        Sound.setVolume(v);
+        if (volumeValue) volumeValue.textContent = String(Math.round(v * 100));
+      });
+      // 슬라이더 떼는 순간에만 테스트 톤
+      volumeSlider.addEventListener('change', () => {
+        if (!Sound.isMuted()) Sound.play('flip');
+      });
+    }
+
+    // 소리 테스트 버튼
+    document.querySelectorAll('.test-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const type = btn.dataset.test;
+        Sound.play(type);
+      });
+    });
+
+    if (okBtn) {
+      okBtn.addEventListener('click', () => {
+        Sound.play('click');
+        Modal.close();
+      });
+    }
+
+    refreshUI();
   }
 
   // 커스텀 이벤트 구독
@@ -185,5 +305,6 @@ const UI = (function() {
   }
 
   return { showScreen, updateScore, updateMoves, updateTimer,
-           setBoardClass, showEndScreen, bindEvents, subscribeToGameEvents };
+           setBoardClass, showEndScreen, bindEvents, subscribeToGameEvents,
+           bindSoundSettings };
 })();

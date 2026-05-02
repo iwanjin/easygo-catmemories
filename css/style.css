@@ -546,3 +546,235 @@ h3 {
   justify-content: center;
   gap: 8px;
 }
+
+/* ========== 음향 설정 아이콘 버튼 (우상단) ========== */
+.icon-btn {
+  position: fixed;
+  top: clamp(10px, 2vw, 18px);
+  right: clamp(10px, 2vw, 18px);
+  width: clamp(40px, 9vw, 52px);
+  height: clamp(40px, 9vw, 52px);
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  font-size: clamp(18px, 4vw, 24px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.icon-btn:hover { transform: scale(1.08); box-shadow: 0 5px 14px rgba(0, 0, 0, 0.2); }
+.icon-btn:active { transform: scale(0.95); }
+
+/* ========== 게임 액션 영역 (일시정지/다시하기) ========== */
+.game-actions {
+  display: flex;
+  gap: clamp(8px, 2vw, 12px);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: clamp(10px, 2vw, 14px);
+}
+
+/* ========== 모달(팝업) 베이스 ========== */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+  padding: clamp(10px, 3vw, 20px);
+}
+.modal.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+.modal.hidden { display: none !important; }
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 15, 30, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--color-card-front);
+  border-radius: clamp(14px, 3vw, 22px);
+  padding: clamp(20px, 5vw, 36px) clamp(18px, 5vw, 32px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  width: 100%;
+  max-width: clamp(280px, 90vw, 460px);
+  max-height: 90vh;
+  overflow-y: auto;
+  text-align: center;
+  transform: scale(0.85) translateY(10px);
+  opacity: 0;
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.25s ease;
+}
+.modal.is-open .modal-content {
+  transform: scale(1) translateY(0);
+  opacity: 1;
+}
+
+.modal-content h2 {
+  font-size: clamp(20px, 5vw, 28px);
+  margin: 0 0 clamp(12px, 2vw, 18px) 0;
+  color: var(--color-primary);
+}
+
+.modal-actions {
+  display: flex;
+  gap: clamp(8px, 2vw, 12px);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: clamp(14px, 3vw, 20px) 0 clamp(8px, 1.5vw, 12px) 0;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: clamp(8px, 1.5vw, 12px);
+  right: clamp(8px, 1.5vw, 12px);
+  width: clamp(28px, 6vw, 36px);
+  height: clamp(28px, 6vw, 36px);
+  border: none;
+  background: transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: clamp(14px, 3vw, 18px);
+  color: #888;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.modal-close-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--color-text);
+}
+
+.modal-ok-btn { margin-top: clamp(10px, 2vw, 14px); min-width: clamp(120px, 30vw, 160px); }
+
+/* 종료 모달 컨페티 */
+.modal-confetti {
+  font-size: clamp(28px, 7vw, 42px);
+  margin-bottom: clamp(8px, 1.5vw, 12px);
+  animation: confettiBounce 1.2s ease-in-out infinite;
+}
+@keyframes confettiBounce {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+
+/* ========== 음향 설정 모달 ========== */
+.sound-modal-content { text-align: left; }
+.sound-modal-content h2 { text-align: center; }
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(10px, 2vw, 16px);
+  padding: clamp(10px, 2vw, 14px) 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  flex-wrap: wrap;
+}
+.setting-row:last-of-type { border-bottom: none; }
+
+.setting-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(13px, 3.2vw, 16px);
+  font-weight: 600;
+  color: var(--color-text);
+}
+.setting-icon { font-size: clamp(16px, 4vw, 20px); }
+
+/* 음소거 토글 버튼 */
+.toggle-btn {
+  border: 2px solid var(--color-secondary);
+  background: var(--color-secondary);
+  color: white;
+  font-weight: bold;
+  padding: clamp(6px, 1.5vw, 8px) clamp(14px, 3vw, 20px);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: clamp(13px, 3vw, 15px);
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  font-family: inherit;
+  min-width: clamp(70px, 18vw, 90px);
+}
+.toggle-btn:active { transform: scale(0.96); }
+.toggle-btn.is-off {
+  background: #C9C0B8;
+  border-color: #C9C0B8;
+}
+
+/* 볼륨 슬라이더 */
+#volume-slider {
+  flex: 1;
+  min-width: clamp(120px, 30vw, 200px);
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--color-primary) 0%, var(--color-secondary) 100%);
+  outline: none;
+  cursor: pointer;
+}
+#volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: clamp(18px, 4vw, 22px);
+  height: clamp(18px, 4vw, 22px);
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--color-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+#volume-slider::-moz-range-thumb {
+  width: clamp(18px, 4vw, 22px);
+  height: clamp(18px, 4vw, 22px);
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--color-primary);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 소리 테스트 버튼 그룹 */
+.sound-test-row { flex-direction: column; align-items: stretch; }
+.test-btn-group {
+  display: flex;
+  gap: clamp(6px, 1.5vw, 10px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.test-btn {
+  border: 2px solid var(--color-accent);
+  background: white;
+  color: var(--color-text);
+  padding: clamp(6px, 1.5vw, 8px) clamp(10px, 2.5vw, 14px);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: clamp(12px, 2.8vw, 14px);
+  font-family: inherit;
+  font-weight: 600;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.test-btn:hover { background: var(--color-accent); color: white; }
+.test-btn:active { transform: scale(0.95); }
+
+/* 일시정지 모달 */
+.pause-modal-content p {
+  font-size: clamp(13px, 3.2vw, 16px);
+  color: #666;
+  margin: clamp(6px, 1.5vw, 10px) 0 clamp(10px, 2vw, 14px) 0;
+}
