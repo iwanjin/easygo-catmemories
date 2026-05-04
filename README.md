@@ -28,7 +28,8 @@ A cute and fun memory card matching game designed for elementary school children
 ### Scoring
 - ✨ **Match**: +100 points
 - ❌ **Mismatch**: -10 points (minimum 0)
-- ⏱️ **Time Bonus**: Remaining time × 2 points when you win
+- ⏱️ **Time Bonus**: `max(0, timeLimit - time) × 5` — finish faster, score higher
+- 🎯 **Perfect Bonus**: `max(0, 200 - extraMoves × 10)` — fewer wasted moves, bigger bonus
 
 ## 🛠️ Tech Stack
 

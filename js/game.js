@@ -264,27 +264,37 @@ const Game = (() => {
 
   /**
    * win() - Handle game win condition
-   * Phase 2: Implemented
-   * Stops timer, calculates final score, and emits game:won event
+   *
+   * 점수 공식:
+   *   매칭 +100 / 미스매치 -10 (실시간 누적, 위 로직)
+   *   + 시간 보너스: max(0, (timeLimit - time)) * 5  (빠를수록 큼)
+   *   + 완벽 보너스: max(0, 200 - extraMoves * 10)   (추가 움직임 적을수록 큼)
+   *
+   *   여기서 extraMoves = moves - pairs (pairs = 매칭에 필요한 최소 움직임).
+   *   짧은 시간 + 적은 움직임이 항상 더 높은 점수를 얻도록 설계.
    */
   function win() {
-    // 1. Stop the timer
     stopTimer();
 
-    // 2. Calculate time bonus
-    // Simplified: time * 2 (accumulated time in seconds * 2)
-    const timeBonus = state.time * 2;
-    state.score += timeBonus;
+    const config = Difficulty.getConfig(state.difficulty);
+    const pairs = state.matched / 2;
+    const extraMoves = Math.max(0, state.moves - pairs);
 
-    // 3. Mark game as not playing
+    const timeBonus = Math.max(0, config.timeLimit - state.time) * 5;
+    const perfectBonus = Math.max(0, 200 - extraMoves * 10);
+
+    state.score += timeBonus + perfectBonus;
+
     state.isPlaying = false;
 
-    // 4. Emit 'game:won' custom event with final stats
     document.dispatchEvent(new CustomEvent('game:won', {
       detail: {
         score: state.score,
         moves: state.moves,
-        time: state.time
+        time: state.time,
+        timeBonus,
+        perfectBonus,
+        extraMoves
       }
     }));
   }
