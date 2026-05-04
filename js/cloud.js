@@ -134,6 +134,7 @@ const Cloud = (function () {
   function mapDoc(d, me) {
     const x = d.data();
     return {
+      id: d.id,
       name: x.name || '익명',
       score: x.score || 0,
       time: x.time || 0,
@@ -142,6 +143,65 @@ const Cloud = (function () {
       dateKey: x.dateKey,
       isMe: x.deviceId === me
     };
+  }
+
+  // ====== 실시간 구독 (Classic) ======
+  // onUpdate(list): 변경 시 호출. 반환값 unsubscribe 함수.
+  // 실패 시 unsubscribe는 noop. 호출자가 폴백을 할 수 있게 ok 플래그도 같이.
+  async function subscribeTop(difficulty, limitN, onUpdate) {
+    if (!isReady()) return () => {};
+    try {
+      const db = await ensure();
+      const col = mod.collection(db, 'leaderboard');
+      const q = mod.query(
+        col,
+        mod.where('difficulty', '==', difficulty),
+        mod.orderBy('score', 'desc'),
+        mod.orderBy('time', 'asc'),
+        mod.orderBy('moves', 'asc'),
+        mod.limit(limitN)
+      );
+      const me = getDeviceId();
+      const unsub = mod.onSnapshot(q, (snap) => {
+        const list = snap.docs.map(d => mapDoc(d, me));
+        onUpdate(list);
+      }, (err) => {
+        console.warn('[Cloud] subscribeTop error', err);
+      });
+      return unsub;
+    } catch (e) {
+      console.warn('[Cloud] subscribeTop failed', e);
+      return () => {};
+    }
+  }
+
+  // ====== 실시간 구독 (Daily) ======
+  async function subscribeDailyTop(limitN, onUpdate, dateKey) {
+    if (!isReady()) return () => {};
+    const key = dateKey || todayKey();
+    try {
+      const db = await ensure();
+      const col = mod.collection(db, 'leaderboard_daily');
+      const q = mod.query(
+        col,
+        mod.where('dateKey', '==', key),
+        mod.orderBy('score', 'desc'),
+        mod.orderBy('time', 'asc'),
+        mod.orderBy('moves', 'asc'),
+        mod.limit(limitN)
+      );
+      const me = getDeviceId();
+      const unsub = mod.onSnapshot(q, (snap) => {
+        const list = snap.docs.map(d => mapDoc(d, me));
+        onUpdate(list);
+      }, (err) => {
+        console.warn('[Cloud] subscribeDailyTop error', err);
+      });
+      return unsub;
+    } catch (e) {
+      console.warn('[Cloud] subscribeDailyTop failed', e);
+      return () => {};
+    }
   }
 
   // ====== 백분위 추정 (classic) ======
@@ -176,6 +236,8 @@ const Cloud = (function () {
     addEntry,
     getTop,
     getDailyTop,
-    getPercentile
+    getPercentile,
+    subscribeTop,
+    subscribeDailyTop
   };
 })();

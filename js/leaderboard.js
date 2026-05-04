@@ -10,10 +10,15 @@
  */
 const Leaderboard = (function () {
   let currentDifficulty = 'easy';
-  let currentScope = 'global'; // 'global' | 'device'
+  let currentScope = 'global'; // 'global' | 'daily' | 'device'
   let highlightEntry = null;   // { scope, difficulty, rank }
   let onCloseCallback = null;
   let renderToken = 0;         // 비동기 race-condition 방지
+
+  // 실시간 구독 상태
+  let activeUnsub = null;       // 현재 활성 onSnapshot 해제 함수
+  let knownIds = new Set();     // 이미 본 doc id (새 항목 강조용)
+  let isFirstSnapshot = true;   // 첫 스냅샷에선 강조 안 함
 
   function formatTime(seconds) {
     const m = String(Math.floor(seconds / 60)).padStart(2, '0');
@@ -46,10 +51,16 @@ const Leaderboard = (function () {
     const ol = document.getElementById('leaderboard-list');
     if (!ol) return;
     ol.innerHTML = '';
+
+    // 첫 스냅샷: 모든 id를 알려진 상태로 등록 (강조 안 함)
+    // 이후 스냅샷: list에 있지만 knownIds에 없는 id는 새 항목 → 강조
     list.forEach((entry, idx) => {
       const rank = idx + 1;
       const li = document.createElement('li');
       li.className = 'lb-row';
+
+      const isNewArrival = entry.id && !isFirstSnapshot && !knownIds.has(entry.id);
+
       if (
         highlightEntry &&
         highlightEntry.scope === currentScope &&
@@ -57,8 +68,11 @@ const Leaderboard = (function () {
         highlightEntry.rank === rank
       ) {
         li.classList.add('lb-row-new');
+      } else if (isNewArrival) {
+        // 실시간으로 들어온 신규 항목 — 살짝 강조
+        li.classList.add('lb-row-fresh');
       }
-      // 글로벌에서 내 디바이스가 올린 기록은 별도 표시
+
       if (entry.isMe) li.classList.add('lb-row-me');
 
       const meBadge = entry.isMe ? '<span class="lb-me-badge">나<span class="en-sub-inline">Me</span></span>' : '';
@@ -74,24 +88,38 @@ const Leaderboard = (function () {
       `;
       ol.appendChild(li);
     });
+
+    // knownIds 갱신: 다음 스냅샷 비교 기준
+    knownIds = new Set(list.map(e => e.id).filter(Boolean));
+    isFirstSnapshot = false;
+  }
+
+  function teardownSubscription() {
+    if (activeUnsub) {
+      try { activeUnsub(); } catch {}
+      activeUnsub = null;
+    }
+    knownIds = new Set();
+    isFirstSnapshot = true;
   }
 
   async function render() {
     const myToken = ++renderToken;
 
-    // 일단 모든 보조 메시지 숨김
+    // 새 렌더 시작 — 기존 구독 해제, 강조 상태 리셋
+    teardownSubscription();
+
     setVisibility('leaderboard-loading', false);
     setVisibility('leaderboard-empty', false);
     setVisibility('leaderboard-cloud-off', false);
     const ol = document.getElementById('leaderboard-list');
     if (ol) ol.innerHTML = '';
 
-    // 난이도 탭은 daily 모드에서 의미가 없으므로 일관성 위해 비활성화 가능
     const diffTabs = document.querySelector('.leaderboard-tabs');
     if (diffTabs) diffTabs.classList.toggle('hidden', currentScope === 'daily');
 
     if (currentScope === 'device') {
-      // 로컬 즉시 렌더 (난이도별)
+      // 로컬 — 실시간 구독 불필요
       const list = Storage.getLeaderboard(currentDifficulty);
       if (list.length === 0) {
         setVisibility('leaderboard-empty', true);
@@ -109,21 +137,25 @@ const Leaderboard = (function () {
 
     setVisibility('leaderboard-loading', true);
 
-    let list;
+    // 실시간 구독 시작
+    const onUpdate = (list) => {
+      if (myToken !== renderToken) return; // 탭이 바뀌면 무시
+      setVisibility('leaderboard-loading', false);
+      if (list.length === 0) {
+        setVisibility('leaderboard-empty', true);
+        const ol2 = document.getElementById('leaderboard-list');
+        if (ol2) ol2.innerHTML = '';
+      } else {
+        setVisibility('leaderboard-empty', false);
+        renderRows(list);
+      }
+    };
+
     if (currentScope === 'daily') {
-      list = await Cloud.getDailyTop(10);
+      activeUnsub = await Cloud.subscribeDailyTop(10, onUpdate);
     } else {
-      list = await Cloud.getTop(currentDifficulty, 10);
+      activeUnsub = await Cloud.subscribeTop(currentDifficulty, 10, onUpdate);
     }
-
-    if (myToken !== renderToken) return;
-
-    setVisibility('leaderboard-loading', false);
-    if (list.length === 0) {
-      setVisibility('leaderboard-empty', true);
-      return;
-    }
-    renderRows(list);
   }
 
   function selectScope(scope) {
@@ -193,6 +225,7 @@ const Leaderboard = (function () {
     // 모달이 닫히는 모든 경로(백드롭, ESC, X 버튼) 처리
     document.addEventListener('modal:closed', (e) => {
       if (e.detail && e.detail.id === 'leaderboard-modal') {
+        teardownSubscription();
         fireCloseCallback();
       }
     });

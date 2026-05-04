@@ -1133,6 +1133,17 @@ h3 {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.025); }
 }
+
+/* 실시간 구독 — 새로 들어온 기록 강조 (3초 부드럽게 페이드) */
+.lb-row.lb-row-fresh {
+  background: linear-gradient(90deg, #E8FFEF 0%, #C8F4D6 100%) !important;
+  animation: lbFreshFade 2.6s ease-out forwards;
+}
+@keyframes lbFreshFade {
+  0%   { background: linear-gradient(90deg, #B8FFD0 0%, #8FE7AB 100%); transform: scale(1.03); }
+  35%  { background: linear-gradient(90deg, #C8F4D6 0%, #A6EBC1 100%); transform: scale(1.01); }
+  100% { background: transparent; transform: scale(1); }
+}
 .leaderboard-empty,
 .leaderboard-loading,
 .leaderboard-cloud-off {
