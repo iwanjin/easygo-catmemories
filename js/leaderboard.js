@@ -25,7 +25,7 @@ const Leaderboard = (function () {
     if (rank === 1) return '🥇';
     if (rank === 2) return '🥈';
     if (rank === 3) return '🥉';
-    return `${rank}`;
+    return `${rank}<span class="en-sub-inline">#${rank}</span>`;
   }
 
   function escapeHtml(s) {
@@ -61,11 +61,15 @@ const Leaderboard = (function () {
       // 글로벌에서 내 디바이스가 올린 기록은 별도 표시
       if (entry.isMe) li.classList.add('lb-row-me');
 
-      const meBadge = entry.isMe ? '<span class="lb-me-badge">나</span>' : '';
+      const meBadge = entry.isMe ? '<span class="lb-me-badge">나<span class="en-sub-inline">Me</span></span>' : '';
+      const rawName = entry.name || '';
+      const displayName = rawName.trim() && rawName !== '익명'
+        ? escapeHtml(rawName)
+        : `${escapeHtml('익명')}<span class="en-sub-inline">Anonymous</span>`;
       li.innerHTML = `
         <span class="lb-rank">${rankIcon(rank)}</span>
-        <span class="lb-name">${escapeHtml(entry.name || '익명')}${meBadge}</span>
-        <span class="lb-score">${entry.score.toLocaleString()}점</span>
+        <span class="lb-name">${displayName}${meBadge}</span>
+        <span class="lb-score">${entry.score.toLocaleString()}점<span class="en-sub-inline">pts</span></span>
         <span class="lb-meta">⏱ ${formatTime(entry.time)} · 🎯 ${entry.moves}회</span>
       `;
       ol.appendChild(li);

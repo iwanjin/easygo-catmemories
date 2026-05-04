@@ -1,38 +1,38 @@
 const UI = (function() {
   let selectedDifficulty = 'easy';
 
-  // 귀여운 메시지 모음
+  // 귀여운 메시지 모음 — { ko, en } 페어로 외국 어린이를 위한 영어 병기
   const messages = {
     tips: [
-      '💡 같은 동물 그림 2개를 찾아보세요!',
-      '🧠 기억력을 사용해서 카드를 찾으세요!',
-      '⚡ 빨리하기보다 정확하게 기억해요!',
-      '🎯 같은 그림을 찾을 때까지 계속 해봐요!'
+      { ko: '💡 같은 동물 그림 2개를 찾아보세요!', en: 'Find 2 cards with the same animal!' },
+      { ko: '🧠 기억력을 사용해서 카드를 찾으세요!', en: 'Use your memory to find the cards!' },
+      { ko: '⚡ 빨리하기보다 정확하게 기억해요!', en: 'Remember well, not fast!' },
+      { ko: '🎯 같은 그림을 찾을 때까지 계속 해봐요!', en: 'Keep going until you match them!' }
     ],
     gameStart: [
-      '🎮 게임을 시작했어요! 화이팅! 💪',
-      '🚀 시작했어! 열심히 해봐요! ✨',
-      '🎪 재미있는 게임이 시작됐어요! 즐겨보세요! 🎉'
+      { ko: '🎮 게임을 시작했어요! 화이팅! 💪', en: 'Game started! You can do it!' },
+      { ko: '🚀 시작했어! 열심히 해봐요! ✨', en: 'Here we go! Do your best!' },
+      { ko: '🎪 재미있는 게임이 시작됐어요! 즐겨보세요! 🎉', en: 'A fun game has begun! Enjoy!' }
     ],
     encouraging: [
-      '⭐ 정말 잘하고 있어요!',
-      '🌟 멋진데? 계속 해봐요!',
-      '💫 우와! 멋져!',
-      '🎉 대단해! 계속 해봐요!',
-      '✨ 정말 좋아! 화이팅! 💪'
+      { ko: '⭐ 정말 잘하고 있어요!', en: 'You are doing great!' },
+      { ko: '🌟 멋진데? 계속 해봐요!', en: 'Awesome! Keep going!' },
+      { ko: '💫 우와! 멋져!', en: 'Wow! So cool!' },
+      { ko: '🎉 대단해! 계속 해봐요!', en: 'Amazing! Keep it up!' },
+      { ko: '✨ 정말 좋아! 화이팅! 💪', en: 'Looking good! You can do it!' }
     ],
     matched: [
-      '🎊 맞췄어! 대단해! 👏',
-      '✨ 찾았어! 최고야! 🌟',
-      '🎯 맞아! 멋진데? 계속 해봐요!',
-      '🌈 완벽해! 계속하자! 🚀'
+      { ko: '🎊 맞췄어! 대단해! 👏', en: 'Match! Amazing!' },
+      { ko: '✨ 찾았어! 최고야! 🌟', en: 'Found it! The best!' },
+      { ko: '🎯 맞아! 멋진데? 계속 해봐요!', en: 'Right! Keep going!' },
+      { ko: '🌈 완벽해! 계속하자! 🚀', en: 'Perfect! Lets go!' }
     ],
     result: [
-      '🏆 완벽했어! 최고의 실력이야! 👑',
-      '🌟 정말 잘했어! 다시 해볼래? 💪',
-      '✨ 멋져! 더 높은 점수도 가능할 것 같은데? 🚀',
-      '🎉 와우! 정말 잘했어! 다시 도전해봐! 🔥',
-      '👍 최고야! 다시 한 번 해보고 더 높은 점수를 노려봐! ⭐'
+      { ko: '🏆 완벽했어! 최고의 실력이야! 👑', en: 'Perfect! Top skills!' },
+      { ko: '🌟 정말 잘했어! 다시 해볼래? 💪', en: 'Well done! Try again?' },
+      { ko: '✨ 멋져! 더 높은 점수도 가능할 것 같은데? 🚀', en: 'Awesome! Aim for a higher score!' },
+      { ko: '🎉 와우! 정말 잘했어! 다시 도전해봐! 🔥', en: 'Wow! Great job! Try again!' },
+      { ko: '👍 최고야! 다시 한 번 해보고 더 높은 점수를 노려봐! ⭐', en: 'The best! Try for a higher score!' }
     ]
   };
 
@@ -41,17 +41,33 @@ const UI = (function() {
     return messageList[Math.floor(Math.random() * messageList.length)];
   }
 
+  function escapeForHtml(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   function showTip() {
     const tipText = document.getElementById('tip-text');
     if (tipText) {
-      tipText.textContent = getRandomMessage('tips');
+      const m = getRandomMessage('tips');
+      tipText.innerHTML = `${escapeForHtml(m.ko)}<span class="en-sub">${escapeForHtml(m.en)}</span>`;
     }
   }
 
+  // 정적/신뢰 메시지를 받아 ko/en 양쪽을 출력
+  // text: string | { ko, en }
   function showGameMessage(text) {
     const messageBox = document.getElementById('game-message');
     if (messageBox) {
-      messageBox.textContent = text;
+      if (text && typeof text === 'object' && 'ko' in text) {
+        messageBox.innerHTML = `${escapeForHtml(text.ko)}<span class="en-sub">${escapeForHtml(text.en || '')}</span>`;
+      } else {
+        messageBox.textContent = text;
+      }
       messageBox.style.animation = 'none';
       setTimeout(() => {
         messageBox.style.animation = 'messageSlideIn 0.4s ease-out';
@@ -62,7 +78,8 @@ const UI = (function() {
   function showEncouragement() {
     const encouragement = document.getElementById('encouragement');
     if (encouragement && Math.random() > 0.5) {
-      encouragement.textContent = getRandomMessage('encouraging');
+      const m = getRandomMessage('encouraging');
+      encouragement.innerHTML = `${escapeForHtml(m.ko)}<span class="en-sub">${escapeForHtml(m.en)}</span>`;
     }
   }
 
@@ -71,7 +88,7 @@ const UI = (function() {
   function showMashWarning() {
     const toast = document.getElementById('mash-toast');
     if (!toast) return;
-    toast.textContent = '🐱 천천히! 신중하게 누르면 더 빨라요';
+    toast.innerHTML = '🐱 천천히! 신중하게 누르면 더 빨라요<span class="en-sub">Slow down! Careful taps win the race.</span>';
     toast.classList.add('is-shown');
     Sound.play('mismatch');
     if (mashToastHideTimer) clearTimeout(mashToastHideTimer);
@@ -120,11 +137,11 @@ const UI = (function() {
   function gradeFromScore(score, difficulty) {
     const max = Difficulty.getMaxScore(difficulty);
     const ratio = max > 0 ? score / max : 0;
-    if (ratio >= 0.95) return { topPct: 5,  emoji: '👑', praise: '전설적인 기억력! 완벽에 가까워요!' };
-    if (ratio >= 0.85) return { topPct: 15, emoji: '🏆', praise: '대단해! 손꼽히는 실력이에요!' };
-    if (ratio >= 0.70) return { topPct: 30, emoji: '🌟', praise: '정말 잘했어요! 머리가 반짝반짝!' };
-    if (ratio >= 0.50) return { topPct: 50, emoji: '✨', praise: '잘했어요! 한 번 더 하면 더 좋은 점수!' };
-    return { topPct: null, emoji: '🐾', praise: '끝까지 클리어한 게 멋져요! 다시 도전!' };
+    if (ratio >= 0.95) return { topPct: 5,  emoji: '👑', praise: '전설적인 기억력! 완벽에 가까워요!', praiseEn: 'Legendary memory! Almost perfect!' };
+    if (ratio >= 0.85) return { topPct: 15, emoji: '🏆', praise: '대단해! 손꼽히는 실력이에요!', praiseEn: 'Amazing! Top-notch skills!' };
+    if (ratio >= 0.70) return { topPct: 30, emoji: '🌟', praise: '정말 잘했어요! 머리가 반짝반짝!', praiseEn: 'Well done! Sharp brain!' };
+    if (ratio >= 0.50) return { topPct: 50, emoji: '✨', praise: '잘했어요! 한 번 더 하면 더 좋은 점수!', praiseEn: 'Nice! Try once more for a better score!' };
+    return { topPct: null, emoji: '🐾', praise: '끝까지 클리어한 게 멋져요! 다시 도전!', praiseEn: 'Cool that you cleared it! Try again!' };
   }
 
   function renderResultComment(score, difficulty, opts = {}) {
@@ -132,21 +149,24 @@ const UI = (function() {
     if (!resultComment) return;
     const grade = gradeFromScore(score, difficulty);
     const topPct = opts.topPct || grade.topPct;
-    const tierLabel = topPct
+    const tierKo = topPct
       ? `${grade.emoji} 상위 ${topPct}% 안에 드는 점수!`
       : `${grade.emoji} 클리어 성공!`;
+    const tierEn = topPct
+      ? `Top ${topPct}%!`
+      : 'Cleared!';
     const sourceTag = opts.fromCloud
-      ? '<span class="result-source">(전체 기록 기준)</span>'
+      ? '<span class="result-source">(글로벌 기준)<span class="en-sub-inline">Global</span></span>'
       : '';
     resultComment.innerHTML = `
-      <div class="result-tier">${tierLabel} ${sourceTag}</div>
-      <div class="result-praise">${grade.praise}</div>
+      <div class="result-tier">${tierKo}<span class="en-sub">${tierEn}</span> ${sourceTag}</div>
+      <div class="result-praise">${grade.praise}<span class="en-sub">${grade.praiseEn}</span></div>
     `;
   }
 
   function showEndScreen(score, bestScore, difficulty) {
-    document.getElementById('final-score').textContent = `🎯 최종 점수: ${score}점`;
-    document.getElementById('best-score').textContent = `⭐ 최고 점수: ${bestScore}점`;
+    document.getElementById('final-score').innerHTML = `🎯 최종 점수: ${score}점<span class="en-sub">Final Score: ${score}</span>`;
+    document.getElementById('best-score').innerHTML = `⭐ 최고 점수: ${bestScore}점<span class="en-sub">Best Score: ${bestScore}</span>`;
 
     // 1차: 점수 비율로 즉시 등급 표시 (오프라인/Firebase 미설정에도 동작)
     renderResultComment(score, difficulty);
@@ -188,18 +208,19 @@ const UI = (function() {
     const stats = document.getElementById('new-rank-stats');
     const message = document.getElementById('new-rank-message');
     const input = document.getElementById('player-name-input');
-    if (badge) badge.textContent = `${rank}위`;
+    if (badge) badge.innerHTML = `${rank}위<span class="en-sub-inline">#${rank}</span>`;
     if (stats) {
       stats.innerHTML = `
-        <span>🎯 ${result.score.toLocaleString()}점</span>
-        <span>⏱ ${formatTimeStr(result.time)}</span>
-        <span>🔄 ${result.moves}회</span>
+        <span>🎯 ${result.score.toLocaleString()}점<span class="en-sub-inline">Score</span></span>
+        <span>⏱ ${formatTimeStr(result.time)}<span class="en-sub-inline">Time</span></span>
+        <span>🔄 ${result.moves}회<span class="en-sub-inline">Moves</span></span>
       `;
     }
     if (message) {
       const grade = gradeFromScore(result.score, result.difficulty);
-      const tier = grade.topPct ? `상위 ${grade.topPct}% — ` : '';
-      message.textContent = `${grade.emoji} ${tier}${grade.praise}`;
+      const tierKo = grade.topPct ? `상위 ${grade.topPct}% — ` : '';
+      const tierEn = grade.topPct ? `Top ${grade.topPct}% — ` : '';
+      message.innerHTML = `${grade.emoji} ${tierKo}${grade.praise}<span class="en-sub">${tierEn}${grade.praiseEn}</span>`;
     }
     if (input) {
       input.value = '';
@@ -266,7 +287,7 @@ const UI = (function() {
       Sound.play('click');
       Game.reset();
       Game.start(selectedDifficulty);
-      showGameMessage('🎮 다시 시작했어요! 화이팅! 💪');
+      showGameMessage({ ko: '🎮 다시 시작했어요! 화이팅! 💪', en: 'Restarted! You can do it!' });
     });
 
     // 일시정지
@@ -438,7 +459,9 @@ const UI = (function() {
         muteToggle.setAttribute('aria-pressed', String(muted));
         muteToggle.classList.toggle('is-off', muted);
       }
-      if (muteText) muteText.textContent = muted ? '꺼짐' : '켜짐';
+      if (muteText) muteText.innerHTML = muted
+        ? '꺼짐<span class="en-sub-inline">Off</span>'
+        : '켜짐<span class="en-sub-inline">On</span>';
       if (volumeSlider) volumeSlider.value = String(Math.round(vol * 100));
       if (volumeValue) volumeValue.textContent = String(Math.round(vol * 100));
     }
