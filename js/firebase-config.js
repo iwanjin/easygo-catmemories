@@ -12,12 +12,12 @@
 // ============================================================
 
 window.FIREBASE_CONFIG = {
-  apiKey:            "REPLACE_ME",
-  authDomain:        "REPLACE_ME",
-  projectId:         "REPLACE_ME",
-  storageBucket:     "REPLACE_ME",
-  messagingSenderId: "REPLACE_ME",
-  appId:             "REPLACE_ME"
+  apiKey:            "AIzaSyCHPBCNY-ytIvckay0iJL2aRpLmkXni1TE",
+  authDomain:        "easygo-c0713.firebaseapp.com",
+  projectId:         "easygo-c0713",
+  storageBucket:     "easygo-c0713.firebasestorage.app",
+  messagingSenderId: "600256873322",
+  appId:             "1:600256873322:web:00b19f05aefc7ab598db13"
 };
 
 window.FIREBASE_READY = !Object.values(window.FIREBASE_CONFIG).some(
