@@ -111,18 +111,20 @@ const UI = (function() {
     }
   }
 
+  // 헤더 값 표시 — 영어 병기 span(.en-sub-inline)을 건드리지 않도록
+  // 일반 span(=값 칸)만 골라서 갱신.
   function updateScore(value) {
-    document.querySelector('#score span').textContent = value;
+    document.querySelector('#score span:not(.en-sub-inline)').textContent = value;
   }
 
   function updateMoves(value) {
-    document.querySelector('#moves span').textContent = value;
+    document.querySelector('#moves span:not(.en-sub-inline)').textContent = value;
   }
 
   function updateTimer(seconds) {
     const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
     const ss = String(seconds % 60).padStart(2, '0');
-    document.querySelector('#timer span').textContent = `${mm}:${ss}`;
+    document.querySelector('#timer span:not(.en-sub-inline)').textContent = `${mm}:${ss}`;
   }
 
   function setBoardClass(difficulty) {
