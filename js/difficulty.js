@@ -45,9 +45,21 @@ const Difficulty = (function() {
     return Object.keys(configs);
   }
 
+  /**
+   * 난이도별 이상적 만점.
+   *   = 페어수 × 100 (모두 매칭, 미스 0) + 시간보너스(즉시클리어=timeLimit*5) + 완벽보너스(200)
+   * 클리어 시 백분위 등급 산정의 분모로 쓴다.
+   */
+  function getMaxScore(level) {
+    const cfg = getConfig(level);
+    const pairs = (cfg.rows * cfg.cols) / 2;
+    return pairs * 100 + cfg.timeLimit * 5 + 200;
+  }
+
   // Public API
   return {
     getConfig: getConfig,
-    getAllLevels: getAllLevels
+    getAllLevels: getAllLevels,
+    getMaxScore: getMaxScore
   };
 })();

@@ -113,13 +113,34 @@ const UI = (function() {
     board.className = `grid-${difficulty}`;
   }
 
-  function showEndScreen(score, bestScore) {
+  /**
+   * 점수 / 이상적 만점 비율로 등급 산정.
+   * Firebase 글로벌 통계가 붙으면 실제 percentile로 교체할 함수.
+   */
+  function gradeFromScore(score, difficulty) {
+    const max = Difficulty.getMaxScore(difficulty);
+    const ratio = max > 0 ? score / max : 0;
+    if (ratio >= 0.95) return { topPct: 5,  emoji: '👑', praise: '전설적인 기억력! 완벽에 가까워요!' };
+    if (ratio >= 0.85) return { topPct: 15, emoji: '🏆', praise: '대단해! 손꼽히는 실력이에요!' };
+    if (ratio >= 0.70) return { topPct: 30, emoji: '🌟', praise: '정말 잘했어요! 머리가 반짝반짝!' };
+    if (ratio >= 0.50) return { topPct: 50, emoji: '✨', praise: '잘했어요! 한 번 더 하면 더 좋은 점수!' };
+    return { topPct: null, emoji: '🐾', praise: '끝까지 클리어한 게 멋져요! 다시 도전!' };
+  }
+
+  function showEndScreen(score, bestScore, difficulty) {
     document.getElementById('final-score').textContent = `🎯 최종 점수: ${score}점`;
     document.getElementById('best-score').textContent = `⭐ 최고 점수: ${bestScore}점`;
 
     const resultComment = document.getElementById('result-comment');
     if (resultComment) {
-      resultComment.textContent = getRandomMessage('result');
+      const grade = gradeFromScore(score, difficulty);
+      const tier = grade.topPct
+        ? `${grade.emoji} 상위 ${grade.topPct}% 안에 드는 점수!`
+        : `${grade.emoji} 클리어 성공!`;
+      resultComment.innerHTML = `
+        <div class="result-tier">${tier}</div>
+        <div class="result-praise">${grade.praise}</div>
+      `;
     }
 
     // 게임 화면을 유지한 채 모달로 띄움 (팝업 효과)
@@ -148,6 +169,7 @@ const UI = (function() {
   function showNameInputModal(rank, result) {
     const badge = document.getElementById('new-rank-badge');
     const stats = document.getElementById('new-rank-stats');
+    const message = document.getElementById('new-rank-message');
     const input = document.getElementById('player-name-input');
     if (badge) badge.textContent = `${rank}위`;
     if (stats) {
@@ -156,6 +178,11 @@ const UI = (function() {
         <span>⏱ ${formatTimeStr(result.time)}</span>
         <span>🔄 ${result.moves}회</span>
       `;
+    }
+    if (message) {
+      const grade = gradeFromScore(result.score, result.difficulty);
+      const tier = grade.topPct ? `상위 ${grade.topPct}% — ` : '';
+      message.textContent = `${grade.emoji} ${tier}${grade.praise}`;
     }
     if (input) {
       input.value = '';
@@ -185,7 +212,7 @@ const UI = (function() {
       showNameInputModal(rank, result);
     } else {
       // 일반 종료 모달
-      showEndScreen(score, Math.max(best, score));
+      showEndScreen(score, Math.max(best, score), difficulty);
     }
   }
 

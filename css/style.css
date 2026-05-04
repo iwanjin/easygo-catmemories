@@ -528,6 +528,21 @@ h3 {
   line-height: 1.6;
 }
 
+.result-tier {
+  font-size: clamp(16px, 4vw, 22px);
+  color: #B85B7C;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 6px;
+}
+
+.result-praise {
+  font-size: clamp(13px, 3.2vw, 16px);
+  color: #7B9DD8;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .result-hint {
   font-size: clamp(12px, 2.5vw, 14px);
   color: #7DB5D8;
