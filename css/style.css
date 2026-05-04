@@ -1133,11 +1133,69 @@ h3 {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.025); }
 }
-.leaderboard-empty {
+.leaderboard-empty,
+.leaderboard-loading,
+.leaderboard-cloud-off {
   text-align: center;
   color: #888;
   font-size: clamp(13px, 3vw, 15px);
   padding: clamp(20px, 5vw, 36px) 0;
+}
+.leaderboard-cloud-off { color: #B68FC7; }
+.leaderboard-loading   { color: #7B9DD8; }
+
+/* ========== 글로벌/내디바이스 스코프 탭 ========== */
+.leaderboard-scope-tabs {
+  display: flex;
+  gap: clamp(4px, 1vw, 8px);
+  margin: 0 0 clamp(6px, 1.5vw, 10px);
+  flex-wrap: wrap;
+}
+.lb-scope-tab {
+  flex: 1;
+  border: 2px solid #E6D8E5;
+  background: #FFF7FB;
+  padding: clamp(8px, 1.8vw, 12px) clamp(10px, 2.5vw, 16px);
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: clamp(12px, 2.8vw, 14px);
+  cursor: pointer;
+  color: #B68FC7;
+  transition: all 0.15s ease;
+}
+.lb-scope-tab:hover {
+  border-color: #C29ED6;
+  color: #8E57AB;
+}
+.lb-scope-tab.is-active {
+  background: linear-gradient(135deg, #FFB6C9 0%, #C7A8E6 100%);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 3px 8px rgba(193, 138, 200, 0.35);
+}
+
+/* 글로벌 리더보드에서 내가 올린 기록 강조 */
+.lb-row.lb-row-me {
+  background: linear-gradient(90deg, #E8F5FF 0%, #DCEBFF 100%) !important;
+  border-left: 4px solid #7DB5D8;
+}
+.lb-me-badge {
+  display: inline-block;
+  background: #7DB5D8;
+  color: white;
+  font-size: clamp(9px, 2vw, 11px);
+  font-weight: bold;
+  padding: 1px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.result-source {
+  font-size: clamp(10px, 2.3vw, 12px);
+  color: #888;
+  font-weight: normal;
+  margin-left: 4px;
 }
 
 /* ========== 이름 입력 모달 + 팡파레 ========== */

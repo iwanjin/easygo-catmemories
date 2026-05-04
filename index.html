@@ -312,16 +312,25 @@
       <button class="modal-close-btn" data-modal-close aria-label="닫기">✕</button>
       <h2 id="leaderboard-title">🏆 명예의 전당</h2>
 
-      <div class="leaderboard-tabs" role="tablist">
+      <div class="leaderboard-scope-tabs" role="tablist" aria-label="기록 범위">
+        <button class="lb-scope-tab is-active" role="tab" data-lb-scope="global">🌍 전체 기록</button>
+        <button class="lb-scope-tab" role="tab" data-lb-scope="device">📱 내 디바이스</button>
+      </div>
+
+      <div class="leaderboard-tabs" role="tablist" aria-label="난이도">
         <button class="lb-tab is-active" role="tab" data-lb-difficulty="easy">🟢 쉬움</button>
         <button class="lb-tab" role="tab" data-lb-difficulty="medium">🟡 보통</button>
         <button class="lb-tab" role="tab" data-lb-difficulty="hard">🔴 어려움</button>
       </div>
 
       <div class="leaderboard-list-wrap">
+        <p id="leaderboard-loading" class="leaderboard-loading hidden">⏳ 기록 불러오는 중...</p>
         <ol id="leaderboard-list" class="leaderboard-list"></ol>
         <p id="leaderboard-empty" class="leaderboard-empty hidden">
           🐾 아직 기록이 없어요. 첫 번째 챔피언이 되어보세요!
+        </p>
+        <p id="leaderboard-cloud-off" class="leaderboard-cloud-off hidden">
+          ☁️ 글로벌 리더보드 준비 중이에요. 곧 다른 친구들의 기록도 볼 수 있어요!
         </p>
       </div>
 
@@ -391,6 +400,8 @@
   </div>
 
   <!-- 스크립트 로드 순서 중요! -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/cloud.js"></script>
   <script src="js/difficulty.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/sound.js"></script>

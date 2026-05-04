@@ -64,6 +64,55 @@ web_game/
 └── README.md               # This file
 ```
 
+## ☁️ Global Leaderboard Setup (Firebase Firestore)
+
+The game can run a worldwide leaderboard via Firestore. Without setup, the game still works — only the global tab is disabled and shows a "preparing" notice.
+
+### Setup Steps
+
+1. **Create a Firebase project**
+   - Go to https://console.firebase.google.com/
+   - Click "Add project", choose any name, skip Analytics
+2. **Enable Firestore Database**
+   - Build → Firestore Database → Create database
+   - Region: `asia-northeast3 (Seoul)` recommended
+   - Start in **test mode** (we will tighten rules below)
+3. **Register a Web App**
+   - Project settings → Your apps → Web (`</>`) icon
+   - Skip Firebase Hosting setup
+   - Copy the `firebaseConfig` object
+4. **Paste keys into `js/firebase-config.js`**
+   - Replace each `"REPLACE_ME"` with the matching value from `firebaseConfig`
+5. **Tighten Firestore Security Rules** (Firestore → Rules)
+   ```
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /leaderboard/{doc} {
+         allow read: if true;
+         allow create: if
+           request.resource.data.keys().hasOnly(
+             ['difficulty','name','score','time','moves','deviceId','createdAt']
+           )
+           && request.resource.data.difficulty in ['easy','medium','hard']
+           && request.resource.data.score is int
+           && request.resource.data.score >= 0
+           && request.resource.data.score <= 10000
+           && request.resource.data.time is int
+           && request.resource.data.time >= 0
+           && request.resource.data.moves is int
+           && request.resource.data.moves >= 0
+           && request.resource.data.name is string
+           && request.resource.data.name.size() <= 12;
+         allow update, delete: if false;
+       }
+     }
+   }
+   ```
+6. **Composite index** — first time the leaderboard query runs, Firestore prints an index URL in the browser console. Click it to auto-create the required composite index for `(difficulty asc, score desc, time asc, moves asc)`.
+
+> The `apiKey` in `firebase-config.js` is a **public client key** and is safe to commit. Security is enforced by Firestore rules above.
+
 ## 🚀 Deployment Guide
 
 ### Deploy to GitHub Pages

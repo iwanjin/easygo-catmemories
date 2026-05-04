@@ -127,20 +127,37 @@ const UI = (function() {
     return { topPct: null, emoji: '🐾', praise: '끝까지 클리어한 게 멋져요! 다시 도전!' };
   }
 
+  function renderResultComment(score, difficulty, opts = {}) {
+    const resultComment = document.getElementById('result-comment');
+    if (!resultComment) return;
+    const grade = gradeFromScore(score, difficulty);
+    const topPct = opts.topPct || grade.topPct;
+    const tierLabel = topPct
+      ? `${grade.emoji} 상위 ${topPct}% 안에 드는 점수!`
+      : `${grade.emoji} 클리어 성공!`;
+    const sourceTag = opts.fromCloud
+      ? '<span class="result-source">(전체 기록 기준)</span>'
+      : '';
+    resultComment.innerHTML = `
+      <div class="result-tier">${tierLabel} ${sourceTag}</div>
+      <div class="result-praise">${grade.praise}</div>
+    `;
+  }
+
   function showEndScreen(score, bestScore, difficulty) {
     document.getElementById('final-score').textContent = `🎯 최종 점수: ${score}점`;
     document.getElementById('best-score').textContent = `⭐ 최고 점수: ${bestScore}점`;
 
-    const resultComment = document.getElementById('result-comment');
-    if (resultComment) {
-      const grade = gradeFromScore(score, difficulty);
-      const tier = grade.topPct
-        ? `${grade.emoji} 상위 ${grade.topPct}% 안에 드는 점수!`
-        : `${grade.emoji} 클리어 성공!`;
-      resultComment.innerHTML = `
-        <div class="result-tier">${tier}</div>
-        <div class="result-praise">${grade.praise}</div>
-      `;
+    // 1차: 점수 비율로 즉시 등급 표시 (오프라인/Firebase 미설정에도 동작)
+    renderResultComment(score, difficulty);
+
+    // 2차: 글로벌 표본 percentile이 도착하면 메시지 업데이트
+    if (Cloud.isReady()) {
+      Cloud.getPercentile(difficulty, score).then((res) => {
+        if (res && res.sampleSize >= 5) {
+          renderResultComment(score, difficulty, { topPct: res.topPct, fromCloud: true });
+        }
+      });
     }
 
     // 게임 화면을 유지한 채 모달로 띄움 (팝업 효과)
@@ -314,6 +331,7 @@ const UI = (function() {
         // 약간의 텀을 두고 리더보드 모달 (모달 전환 애니메이션 안 깨지게)
         setTimeout(() => Leaderboard.open({
           difficulty: diff,
+          scope: Cloud.isReady() ? 'global' : 'device',
           onClose: returnToStartAfterGame
         }), 280);
       });
@@ -336,7 +354,10 @@ const UI = (function() {
     if (openBtn) {
       openBtn.addEventListener('click', () => {
         Sound.play('click');
-        Leaderboard.open({ difficulty: selectedDifficulty });
+        Leaderboard.open({
+          difficulty: selectedDifficulty,
+          scope: Cloud.isReady() ? 'global' : 'device'
+        });
       });
     }
 
@@ -351,18 +372,33 @@ const UI = (function() {
         return;
       }
       const finalName = (name || '').trim() || '익명';
-      const r = Storage.addToLeaderboard(lastResult.difficulty, {
+      const payload = {
         name: finalName,
         score: lastResult.score,
         time: lastResult.time,
         moves: lastResult.moves
-      });
+      };
+
+      // 1) 로컬 — 즉시 반영
+      const localRank = Storage.addToLeaderboard(lastResult.difficulty, payload);
+
+      // 2) 글로벌 — fire and forget (실패해도 게임 흐름 영향 없음)
+      Cloud.addEntry({ difficulty: lastResult.difficulty, ...payload });
+
       Modal.close();
       const diff = lastResult.difficulty;
       lastResult = null;
+
       setTimeout(() => {
-        const opts = { difficulty: diff, onClose: returnToStartAfterGame };
-        if (r > 0) opts.highlight = { difficulty: diff, rank: r };
+        // 글로벌 활성화 시 전체 탭으로 보여줌 (다른 사람 기록도 함께)
+        const opts = {
+          difficulty: diff,
+          scope: Cloud.isReady() ? 'global' : 'device',
+          onClose: returnToStartAfterGame
+        };
+        if (localRank > 0) {
+          opts.highlight = { scope: 'device', difficulty: diff, rank: localRank };
+        }
         Leaderboard.open(opts);
       }, 280);
     }
