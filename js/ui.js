@@ -1,5 +1,8 @@
 const UI = (function() {
   let selectedDifficulty = 'easy';
+  let selectedMode = 'classic';      // 'classic' | 'daily' | 'versus'
+  let lastStartOpts = null;          // 마지막 시작 옵션 (다시하기/한번더에서 재사용)
+  let comboBurstHideTimer = null;
 
   // 귀여운 메시지 모음 — { ko, en } 페어로 외국 어린이를 위한 영어 병기
   const messages = {
@@ -81,6 +84,71 @@ const UI = (function() {
       const m = getRandomMessage('encouraging');
       encouragement.innerHTML = `${escapeForHtml(m.ko)}<span class="en-sub">${escapeForHtml(m.en)}</span>`;
     }
+  }
+
+  // ==================== 콤보 표시 ====================
+  function showComboBurst(multiplier) {
+    const burst = document.getElementById('combo-burst');
+    if (!burst) return;
+    burst.innerHTML = `×${multiplier}<div class="en-sub" style="font-size:0.35em;letter-spacing:0.2em;">COMBO</div>`;
+    burst.classList.remove('is-bursting');
+    void burst.offsetWidth; // restart animation
+    burst.classList.add('is-bursting');
+    if (comboBurstHideTimer) clearTimeout(comboBurstHideTimer);
+    comboBurstHideTimer = setTimeout(() => {
+      burst.classList.remove('is-bursting');
+    }, 950);
+  }
+
+  function updateComboIndicator() {
+    const ind = document.getElementById('combo-indicator');
+    const num = document.getElementById('combo-mult-text');
+    if (!ind || !num) return;
+    const s = Game.getState();
+    if (s.combo >= 2) {
+      num.textContent = String(s.comboMultiplier);
+      ind.classList.remove('hidden');
+    } else {
+      ind.classList.add('hidden');
+    }
+  }
+
+  // ==================== 짝꿍 대결 점수판 ====================
+  function showVersusBoard(players) {
+    const board = document.getElementById('versus-board');
+    if (!board || !players) return;
+    board.classList.remove('hidden');
+    players.forEach((p, i) => {
+      const slot = board.querySelector(`.versus-player[data-player="${i}"]`);
+      if (!slot) return;
+      slot.querySelector('.vp-name').innerHTML =
+        `${escapeForHtml(p.ko)}<span class="en-sub-inline">${escapeForHtml(p.en)}</span>`;
+      slot.querySelector('.vp-matches').textContent = '0';
+      slot.querySelector('.vp-score').textContent = '0';
+      slot.classList.remove('is-turn');
+    });
+    highlightVersusTurn(0);
+  }
+  function hideVersusBoard() {
+    const board = document.getElementById('versus-board');
+    if (board) board.classList.add('hidden');
+  }
+  function updateVersusBoard() {
+    const s = Game.getState();
+    if (s.mode !== 'versus' || !s.players) return;
+    const board = document.getElementById('versus-board');
+    if (!board) return;
+    s.players.forEach((p, i) => {
+      const slot = board.querySelector(`.versus-player[data-player="${i}"]`);
+      if (!slot) return;
+      slot.querySelector('.vp-matches').textContent = String(p.matches);
+      slot.querySelector('.vp-score').textContent = String(p.score);
+    });
+  }
+  function highlightVersusTurn(idx) {
+    document.querySelectorAll('.versus-player').forEach(el => el.classList.remove('is-turn'));
+    const cur = document.querySelector(`.versus-player[data-player="${idx}"]`);
+    if (cur) cur.classList.add('is-turn');
   }
 
   // 막누름 경고 토스트 — 1.4초 보여주고 자동 숨김
@@ -205,12 +273,18 @@ const UI = (function() {
     });
   }
 
-  function showNameInputModal(rank, result) {
+  function showNameInputModal(rank, result, opts = {}) {
     const badge = document.getElementById('new-rank-badge');
     const stats = document.getElementById('new-rank-stats');
     const message = document.getElementById('new-rank-message');
     const input = document.getElementById('player-name-input');
-    if (badge) badge.innerHTML = `${rank}위<span class="en-sub-inline">#${rank}</span>`;
+    if (badge) {
+      if (opts.mode === 'daily') {
+        badge.innerHTML = '오늘의 챌린지<span class="en-sub-inline">Daily</span>';
+      } else {
+        badge.innerHTML = `${rank}위<span class="en-sub-inline">#${rank}</span>`;
+      }
+    }
     if (stats) {
       stats.innerHTML = `
         <span>🎯 ${result.score.toLocaleString()}점<span class="en-sub-inline">Score</span></span>
@@ -236,23 +310,109 @@ const UI = (function() {
   }
 
   function handleGameWon(detail) {
+    const mode = detail.mode || Game.getState().mode || 'classic';
+
+    // === Versus 모드: 별도 결과 모달 ===
+    if (mode === 'versus') {
+      showVersusEndModal(detail);
+      return;
+    }
+
     const { score, time, moves } = detail;
     const difficulty = Game.getState().difficulty;
+    const seed = Game.getState().seed;
+
+    // === Daily 모드: 항상 클라우드 등록 (이름 입력 모달) ===
+    if (mode === 'daily') {
+      const result = { score, time, moves, difficulty, mode: 'daily', seed };
+      lastResult = result;
+      // 일일은 로컬 저장 안 함, TOP10 평가도 클라우드에 위임
+      showNameInputModal(null, result, { mode: 'daily' });
+      return;
+    }
+
+    // === Classic 모드: 기존 흐름 ===
     const best = Storage.getBestScore(difficulty);
     Storage.saveBestScore(difficulty, score);
     refreshBestScoreSummary();
-
-    const result = { score, time, moves, difficulty };
+    const result = { score, time, moves, difficulty, mode: 'classic' };
     lastResult = result;
 
-    // TOP10 진입 여부 평가 (이름은 아직 모름)
     const rank = Storage.calcRank(difficulty, { score, time, moves });
     if (rank > 0) {
-      // 진입! 이름 입력 모달로 직진 (end-modal 건너뜀)
       showNameInputModal(rank, result);
     } else {
-      // 일반 종료 모달
       showEndScreen(score, Math.max(best, score), difficulty);
+    }
+  }
+
+  // ==================== Versus 결과 모달 ====================
+  function showVersusEndModal(detail) {
+    const banner = document.getElementById('vs-winner-banner');
+    const board = document.getElementById('vs-scoreboard');
+    if (banner) {
+      if (detail.winnerIndex === -1) {
+        banner.innerHTML = '🤝 무승부!<span class="en-sub">It\'s a tie!</span>';
+      } else {
+        const w = detail.players[detail.winnerIndex];
+        banner.innerHTML = `🏆 ${escapeForHtml(w.ko)} 승!<span class="en-sub">${escapeForHtml(w.en)} wins!</span>`;
+      }
+    }
+    if (board) {
+      board.innerHTML = detail.players.map((p, i) => {
+        const isWin = i === detail.winnerIndex;
+        return `
+          <div class="${isWin ? 'win' : ''}">
+            <div class="vsr-name">${escapeForHtml(p.ko)}<span class="en-sub-inline">${escapeForHtml(p.en)}</span></div>
+            <div class="vsr-matches">${p.matches}<span class="en-sub-inline">matches</span></div>
+            <div style="font-size:0.85em;color:#888;">${p.score}<span class="en-sub-inline">pts</span></div>
+          </div>
+        `;
+      }).join('');
+    }
+    Modal.open('versus-end-modal');
+    Sound.play('fanfare');
+  }
+
+  // ==================== Helpers ====================
+  function buildStartOpts() {
+    const opts = { mode: selectedMode, difficulty: selectedDifficulty };
+    if (selectedMode === 'daily') {
+      opts.difficulty = 'medium';
+      // 시드 = 오늘 날짜 (UTC). Cloud에 동일 함수가 있으면 그걸 사용.
+      opts.seed = Cloud.todayKey ? Cloud.todayKey() : new Date().toISOString().slice(0, 10);
+    }
+    return opts;
+  }
+
+  function applyModeUI(mode) {
+    // 모드 카드 활성 상태
+    document.querySelectorAll('.mode-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    // 모드 도움말 카드 토글
+    document.querySelectorAll('.mode-help-box .mh-card').forEach(c => {
+      c.classList.toggle('hidden', c.dataset.mhMode !== mode);
+    });
+    // 일일 챌린지: 난이도 medium 고정 (다른 난이도 비활성화)
+    const lockedHint = document.getElementById('difficulty-locked-hint');
+    if (mode === 'daily') {
+      document.querySelectorAll('.difficulty-btn').forEach(b => {
+        const isMed = b.dataset.difficulty === 'medium';
+        b.classList.toggle('is-disabled', !isMed);
+        b.classList.toggle('active', isMed);
+      });
+      selectedDifficulty = 'medium';
+      if (lockedHint) lockedHint.classList.remove('hidden');
+    } else {
+      document.querySelectorAll('.difficulty-btn').forEach(b => {
+        b.classList.remove('is-disabled');
+      });
+      // 활성 표시는 selectedDifficulty 유지
+      document.querySelectorAll('.difficulty-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.difficulty === selectedDifficulty);
+      });
+      if (lockedHint) lockedHint.classList.add('hidden');
     }
   }
 
@@ -262,6 +422,7 @@ const UI = (function() {
     document.querySelectorAll('.difficulty-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const target = e.target.closest('.difficulty-btn');
+        if (target.classList.contains('is-disabled')) return;
         selectedDifficulty = target.dataset.difficulty;
         document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
         target.classList.add('active');
@@ -277,18 +438,29 @@ const UI = (function() {
     const defaultBtn = document.querySelector(`.difficulty-btn[data-difficulty="${selectedDifficulty}"]`);
     if (defaultBtn) defaultBtn.classList.add('active');
 
+    // 모드 버튼 클릭
+    document.querySelectorAll('.mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        Sound.play('click');
+        selectedMode = btn.dataset.mode;
+        applyModeUI(selectedMode);
+      });
+    });
+    applyModeUI(selectedMode);
+
     // 시작 버튼 → Game.start()
     document.getElementById('start-btn').addEventListener('click', () => {
       Sound.play('click');
-      Game.start(selectedDifficulty);
+      lastStartOpts = buildStartOpts();
+      Game.start(lastStartOpts);
       showScreen('game');
     });
 
-    // 재시작 → Game.reset() + start()
+    // 재시작 → 같은 옵션으로
     document.getElementById('restart-btn').addEventListener('click', () => {
       Sound.play('click');
       Game.reset();
-      Game.start(selectedDifficulty);
+      Game.start(lastStartOpts || buildStartOpts());
       showGameMessage({ ko: '🎮 다시 시작했어요! 화이팅! 💪', en: 'Restarted! You can do it!' });
     });
 
@@ -323,14 +495,37 @@ const UI = (function() {
       });
     }
 
-    // 한번 더 → 같은 난이도로 다시 시작
+    // 한번 더 → 같은 모드/난이도로 다시 시작
     document.getElementById('play-again-btn').addEventListener('click', () => {
       Sound.play('click');
       Modal.close();
       Game.reset();
-      Game.start(selectedDifficulty);
+      Game.start(lastStartOpts || buildStartOpts());
       showScreen('game');
     });
+
+    // Versus 결과 모달 — 다시 대결
+    const vsAgain = document.getElementById('vs-play-again-btn');
+    if (vsAgain) {
+      vsAgain.addEventListener('click', () => {
+        Sound.play('click');
+        Modal.close();
+        Game.reset();
+        Game.start(lastStartOpts || { mode: 'versus', difficulty: selectedDifficulty });
+        showScreen('game');
+      });
+    }
+    // Versus 결과 모달 — 처음 화면으로
+    const vsBack = document.getElementById('vs-back-btn');
+    if (vsBack) {
+      vsBack.addEventListener('click', () => {
+        Sound.play('click');
+        Modal.close();
+        Game.reset();
+        refreshBestScoreSummary();
+        showScreen('start');
+      });
+    }
 
     // 처음 화면으로 (종료 모달)
     const backToStartBtn = document.getElementById('back-to-start-btn');
@@ -395,28 +590,37 @@ const UI = (function() {
         return;
       }
       const finalName = (name || '').trim() || '익명';
+      const mode = lastResult.mode || 'classic';
       const payload = {
+        mode,
+        difficulty: lastResult.difficulty,
         name: finalName,
         score: lastResult.score,
         time: lastResult.time,
         moves: lastResult.moves
       };
 
-      // 1) 로컬 — 즉시 반영
-      const localRank = Storage.addToLeaderboard(lastResult.difficulty, payload);
+      let localRank = -1;
+      if (mode === 'classic') {
+        localRank = Storage.addToLeaderboard(lastResult.difficulty, {
+          name: finalName, score: lastResult.score,
+          time: lastResult.time, moves: lastResult.moves
+        });
+      }
+      // daily는 로컬에 안 남기고 글로벌만 (오늘 날짜 키 자동 부여)
 
-      // 2) 글로벌 — fire and forget (실패해도 게임 흐름 영향 없음)
-      Cloud.addEntry({ difficulty: lastResult.difficulty, ...payload });
+      // 글로벌 — fire and forget
+      Cloud.addEntry(payload);
 
       Modal.close();
       const diff = lastResult.difficulty;
+      const wasDaily = mode === 'daily';
       lastResult = null;
 
       setTimeout(() => {
-        // 글로벌 활성화 시 전체 탭으로 보여줌 (다른 사람 기록도 함께)
         const opts = {
           difficulty: diff,
-          scope: Cloud.isReady() ? 'global' : 'device',
+          scope: wasDaily ? 'daily' : (Cloud.isReady() ? 'global' : 'device'),
           onClose: returnToStartAfterGame
         };
         if (localRank > 0) {
@@ -533,11 +737,39 @@ const UI = (function() {
       updateGameDisplay();
       showGameMessage(getRandomMessage('matched'));
       showEncouragement();
+      // 콤보 표시
+      const mult = e.detail && e.detail.multiplier ? e.detail.multiplier : 1;
+      if (mult > 1) showComboBurst(mult);
+      updateComboIndicator();
+      // versus 점수판 갱신
+      updateVersusBoard();
     });
 
     // 카드 미스매칭
     document.addEventListener('card:mismatched', () => {
       updateGameDisplay();
+      updateComboIndicator();
+    });
+
+    // 차례 변경 (versus)
+    document.addEventListener('game:turnChanged', (e) => {
+      const idx = e.detail && e.detail.currentPlayerIndex;
+      if (idx != null) highlightVersusTurn(idx);
+    });
+
+    // 게임 시작 — 콤보/versus UI 초기화
+    document.addEventListener('game:started', (e) => {
+      const mode = e.detail && e.detail.mode;
+      const ind = document.getElementById('combo-indicator');
+      if (ind) ind.classList.add('hidden');
+      const burst = document.getElementById('combo-burst');
+      if (burst) burst.classList.remove('is-bursting');
+      if (mode === 'versus') {
+        const s = Game.getState();
+        showVersusBoard(s.players);
+      } else {
+        hideVersusBoard();
+      }
     });
 
     // 게임 우승 시

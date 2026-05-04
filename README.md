@@ -88,6 +88,7 @@ The game can run a worldwide leaderboard via Firestore. Without setup, the game 
    rules_version = '2';
    service cloud.firestore {
      match /databases/{database}/documents {
+       // Classic 모드 글로벌 리더보드
        match /leaderboard/{doc} {
          allow read: if true;
          allow create: if
@@ -97,13 +98,35 @@ The game can run a worldwide leaderboard via Firestore. Without setup, the game 
            && request.resource.data.difficulty in ['easy','medium','hard']
            && request.resource.data.score is int
            && request.resource.data.score >= 0
-           && request.resource.data.score <= 10000
+           && request.resource.data.score <= 100000
            && request.resource.data.time is int
            && request.resource.data.time >= 0
            && request.resource.data.moves is int
            && request.resource.data.moves >= 0
            && request.resource.data.name is string
            && request.resource.data.name.size() <= 12;
+         allow update, delete: if false;
+       }
+
+       // 일일 챌린지 리더보드
+       match /leaderboard_daily/{doc} {
+         allow read: if true;
+         allow create: if
+           request.resource.data.keys().hasOnly(
+             ['difficulty','name','score','time','moves','deviceId','dateKey','createdAt']
+           )
+           && request.resource.data.difficulty in ['easy','medium','hard']
+           && request.resource.data.score is int
+           && request.resource.data.score >= 0
+           && request.resource.data.score <= 100000
+           && request.resource.data.time is int
+           && request.resource.data.time >= 0
+           && request.resource.data.moves is int
+           && request.resource.data.moves >= 0
+           && request.resource.data.name is string
+           && request.resource.data.name.size() <= 12
+           && request.resource.data.dateKey is string
+           && request.resource.data.dateKey.size() == 10;
          allow update, delete: if false;
        }
      }

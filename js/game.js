@@ -1,65 +1,60 @@
 /**
  * Game Module - IIFE
- * Main game controller managing game state, flow, and event coordination
- *
- * Team A: Core Logic (Phase 1)
+ * 게임 상태/흐름 관리. 모드(classic / daily / versus) 분기.
  */
 const Game = (() => {
-  // ==================== Private State ====================
+  // ==================== State ====================
   let state = {
+    mode: 'classic',          // 'classic' | 'daily' | 'versus'
     difficulty: 'medium',
-    score: 0,
+    seed: null,               // daily 모드에서 결정론적 셔플 시드
+    score: 0,                 // 1인 모드 점수
     moves: 0,
     time: 0,
     matched: 0,
     total: 0,
+    combo: 0,                 // 연속 매칭 카운트 (1인 모드)
+    comboMultiplier: 1,       // 위에서 계산된 배수
     isPlaying: false,
     isPaused: false,
-    flippedCards: [],    // 현재 뒤집혀있는 카드 (최대 2장)
-    isLocked: false      // 카드 비교 중 클릭 방지
+    flippedCards: [],
+    isLocked: false,
+    // versus 전용
+    players: null,            // [{name, en, score, matches, combo}]
+    currentPlayerIndex: -1
   };
 
   let timerInterval = null;
-  let cardsArray = [];  // Reference to created cards
-  let boardClickHandler = null; // 중복 등록 방지용 참조
+  let cardsArray = [];
+  let boardClickHandler = null;
 
-  // ==================== 막누름(button mash) 감지 ====================
-  // 디자인 의도: "정말 머리 좋은 친구"는 발동 안 되고, 무지성 연타만 잡는다.
-  //   - 처음 2 페어는 정보가 없으니 그냥 통과 (가드)
-  //   - 최근 3 페어 시도가 모두 미스매치이면서 클릭 간격이 너무 짧으면 발동
-  //     → "기억을 거의 안 쓰고 빠르게만 누르는" 패턴
-  //   - 매칭이 한 번이라도 섞이면 휴리스틱 점수 리셋
-  let cooldownUntil = 0;            // performance.now() 기준, 이 시각까지 클릭 lock
-  let recentClickTimes = [];        // 최근 카드 클릭 시각들 (디버그용/일반 추적)
-  let recentPairIntraTimes = [];    // 각 페어의 "두 클릭 사이" 시간 (intra-pair interval)
-  let recentMatchOutcomes = [];     // 최근 페어 시도 결과 (true=match, false=mismatch)
-  const MASH_RECENT_PAIRS = 3;      // 최근 N 페어를 본다
-  const MASH_INTRA_MS = 320;        // 페어 안 두 클릭 간격 평균이 이 값보다 짧으면 무지성 연타 의심
-  const MASH_GUARD_MOVES = 2;       // 처음 2 페어는 발동 안 함 (정보 부족)
-  const MASH_LOCK_MS = 1200;        // 발동 시 1.2초 lock
+  // ==================== 막누름 감지 (기존) ====================
+  let cooldownUntil = 0;
+  let recentClickTimes = [];
+  let recentPairIntraTimes = [];
+  let recentMatchOutcomes = [];
+  const MASH_RECENT_PAIRS = 3;
+  const MASH_INTRA_MS = 320;
+  const MASH_GUARD_MOVES = 2;
+  const MASH_LOCK_MS = 1200;
   let lastMashWarnAt = 0;
 
-
-  // ==================== Private Functions ====================
-
-  /**
-   * startTimer() - Start the game timer using setInterval
-   * Phase 1: Just initialize the structure, timer increments every second
-   */
-  function startTimer() {
-    // Clear any existing interval first
-    if (timerInterval) {
-      clearInterval(timerInterval);
-    }
-
-    timerInterval = setInterval(() => {
-      state.time++;
-    }, 1000);
+  // ==================== 콤보 ====================
+  // 연속 매칭 카운트 → 배수.
+  // 1: x1, 2~3: x2, 4~5: x3, 6~7: x5, 8+: x8
+  function comboToMultiplier(combo) {
+    if (combo >= 8) return 8;
+    if (combo >= 6) return 5;
+    if (combo >= 4) return 3;
+    if (combo >= 2) return 2;
+    return 1;
   }
 
-  /**
-   * stopTimer() - Stop the game timer using clearInterval
-   */
+  // ==================== Timer ====================
+  function startTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => { state.time++; }, 1000);
+  }
   function stopTimer() {
     if (timerInterval) {
       clearInterval(timerInterval);
@@ -67,63 +62,36 @@ const Game = (() => {
     }
   }
 
-  /**
-   * initializeCards() - Helper to populate game-board with card elements
-   * Phase 1: Just places cards, click handling to be added
-   */
+  // ==================== Board ====================
   function initializeCards() {
     const gameBoard = document.getElementById('game-board');
-
-    // Clear any existing cards
     gameBoard.innerHTML = '';
-
-    // Create and append card elements
     cardsArray.forEach(card => {
       const cardElement = Cards.createElement(card);
       gameBoard.appendChild(cardElement);
     });
   }
 
-  /**
-   * handleCardClick(cardId) - Handle card click event
-   * Phase 2: Implemented
-   * Processes card flipping, matching logic, and event emission
-   */
+  // ==================== Click ====================
   function handleCardClick(cardId) {
-    // 0. Pause 중에는 클릭 무시
     if (state.isPaused) return;
 
     const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-
-    // 0.5. 막누름 cooldown 중이면 무시 (자동으로 풀림)
     if (now < cooldownUntil) return;
-
-    // 1. Check if game is locked (cards are being compared)
     if (state.isLocked) return;
 
-    // 셔플 이후 cardsArray의 인덱스와 카드의 id는 일치하지 않으므로
-    // 반드시 id로 조회해야 한다 (예전엔 cardsArray[cardId]로 잘못 접근).
     const card = cardsArray.find(c => c.id === cardId);
     if (!card) return;
-
-    // 2. Check if card is already flipped
     if (card.isFlipped) return;
-
-    // 3. Check if card is already matched
     if (card.isMatched) return;
 
-    // 4. Flip the card using Cards module
     Cards.flip(cardId);
 
-    // 4.5 막누름 감지용 클릭 시각 기록 (최근 6번만 유지)
     recentClickTimes.push(now);
     if (recentClickTimes.length > 6) recentClickTimes.shift();
 
-    // 5. Add cardId to flippedCards array
     state.flippedCards.push(cardId);
 
-    // 5.5 페어 두 번째 클릭이면 intra-pair interval 기록
-    //     (lock 해제 대기 시간과 무관한 "사고 시간" 측정)
     if (state.flippedCards.length === 2 && recentClickTimes.length >= 2) {
       const last = recentClickTimes[recentClickTimes.length - 1];
       const prev = recentClickTimes[recentClickTimes.length - 2];
@@ -133,72 +101,84 @@ const Game = (() => {
       }
     }
 
-    // 6. Emit 'card:flipped' custom event
     document.dispatchEvent(new CustomEvent('card:flipped', {
       detail: { cardId: cardId }
     }));
 
-    // 7. If 2 cards are flipped, check for match
     if (state.flippedCards.length === 2) {
       checkMatch();
     }
   }
 
-  /**
-   * checkMatch() - Check if two flipped cards match
-   * Phase 2: Implemented
-   * Compares two flipped cards and handles match/mismatch logic
-   */
   function checkMatch() {
-    // 1. Lock the game to prevent additional clicks
     state.isLocked = true;
-
-    // 2. Increment moves
     state.moves++;
 
-    // 3. Get the two flipped card objects by ID (not by array index)
     const card1 = cardsArray.find(c => c.id === state.flippedCards[0]);
     const card2 = cardsArray.find(c => c.id === state.flippedCards[1]);
 
-    // 4. Compare emojis
     if (card1.emoji === card2.emoji) {
-      // === MATCH SUCCESS ===
+      // === 매칭 성공 ===
       Cards.markMatched(state.flippedCards[0]);
       Cards.markMatched(state.flippedCards[1]);
-
       state.matched += 2;
-      state.score += 100;
 
-      // 막누름 추적: 매칭 성공 → 휴리스틱 윈도우에 true 기록
+      if (state.mode === 'versus') {
+        const p = state.players[state.currentPlayerIndex];
+        p.matches += 1;
+        p.combo += 1;
+        const mult = comboToMultiplier(p.combo);
+        p.score += 100 * mult;
+        state.combo = p.combo;
+        state.comboMultiplier = mult;
+      } else {
+        state.combo += 1;
+        state.comboMultiplier = comboToMultiplier(state.combo);
+        state.score += 100 * state.comboMultiplier;
+      }
+
       pushMatchOutcome(true);
 
-      // Emit 'card:matched' event
       document.dispatchEvent(new CustomEvent('card:matched', {
-        detail: { cardIds: state.flippedCards }
+        detail: {
+          cardIds: state.flippedCards,
+          combo: state.combo,
+          multiplier: state.comboMultiplier
+        }
       }));
 
       state.flippedCards = [];
       state.isLocked = false;
-
-      // Check if all cards are matched
       checkWin();
     } else {
-      // === MATCH FAILURE ===
-      // 막누름 추적: 미스매치 기록 + mash 휴리스틱 평가
+      // === 미스매치 ===
       pushMatchOutcome(false);
       maybeTriggerMashWarning();
 
-      // Wait 1 second, then unflip both cards
+      const flippedCopy = state.flippedCards.slice();
+
       setTimeout(() => {
-        Cards.unflip(state.flippedCards[0]);
-        Cards.unflip(state.flippedCards[1]);
+        Cards.unflip(flippedCopy[0]);
+        Cards.unflip(flippedCopy[1]);
 
-        // Deduct points (minimum 0)
-        state.score = Math.max(0, state.score - 10);
+        if (state.mode === 'versus') {
+          const p = state.players[state.currentPlayerIndex];
+          p.combo = 0;
+          // 다음 플레이어로 차례 넘김
+          state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+          state.combo = state.players[state.currentPlayerIndex].combo;
+          state.comboMultiplier = comboToMultiplier(state.combo);
+          document.dispatchEvent(new CustomEvent('game:turnChanged', {
+            detail: { currentPlayerIndex: state.currentPlayerIndex }
+          }));
+        } else {
+          state.combo = 0;
+          state.comboMultiplier = 1;
+          state.score = Math.max(0, state.score - 10);
+        }
 
-        // Emit 'card:mismatched' event
         document.dispatchEvent(new CustomEvent('card:mismatched', {
-          detail: { cardIds: state.flippedCards }
+          detail: { cardIds: flippedCopy }
         }));
 
         state.flippedCards = [];
@@ -214,17 +194,6 @@ const Game = (() => {
     }
   }
 
-  /**
-   * 막누름 의심 휴리스틱:
-   *   - 가드: state.moves <= MASH_GUARD_MOVES면 발동 안 함 (정보 부족 단계)
-   *   - 최근 N(=3) 페어가 모두 미스매치 (매칭 0건)
-   *   - 최근 N 페어의 "페어 안 두 클릭 시간차" 평균이 MASH_INTRA_MS 미만
-   *     (lock 시간 1초와 무관하게, 두 카드 사이 "사고 시간"만 본다)
-   *   → 모두 만족 시 cooldown 발동 + 'game:mashWarning' 이벤트 디스패치 (UI는 토스트/사운드 처리)
-   *
-   * 머리 좋은 친구: 매칭률이 높으니 allMiss 조건 미충족 → 발동 안 함.
-   * 무지성 연타: 두 카드 사이 거의 사고 없이 빠르게 → 평균 intra가 매우 짧음 → 발동.
-   */
   function maybeTriggerMashWarning() {
     if (state.moves <= MASH_GUARD_MOVES) return;
     if (recentMatchOutcomes.length < MASH_RECENT_PAIRS) return;
@@ -237,7 +206,6 @@ const Game = (() => {
       recentPairIntraTimes.reduce((a, b) => a + b, 0) / recentPairIntraTimes.length;
     if (avgIntra >= MASH_INTRA_MS) return;
 
-    // 발동
     const now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     cooldownUntil = now + MASH_LOCK_MS;
     lastMashWarnAt = now;
@@ -246,36 +214,47 @@ const Game = (() => {
       detail: { lockMs: MASH_LOCK_MS, avgIntra: Math.round(avgIntra) }
     }));
 
-    // 다음 발동 전에 휴리스틱 윈도우 부분 리셋 (한 번 잡고 풀어줌)
     recentMatchOutcomes = [];
     recentPairIntraTimes = [];
   }
 
-  /**
-   * checkWin() - Check if all cards are matched
-   * Phase 2: Implemented
-   * Checks if all cards have been matched and triggers win condition
-   */
+  // ==================== Win ====================
   function checkWin() {
-    if (state.matched === state.total) {
-      win();
-    }
+    if (state.matched === state.total) win();
   }
 
   /**
-   * win() - Handle game win condition
-   *
-   * 점수 공식:
-   *   매칭 +100 / 미스매치 -10 (실시간 누적, 위 로직)
-   *   + 시간 보너스: max(0, (timeLimit - time)) * 5  (빠를수록 큼)
-   *   + 완벽 보너스: max(0, 200 - extraMoves * 10)   (추가 움직임 적을수록 큼)
-   *
-   *   여기서 extraMoves = moves - pairs (pairs = 매칭에 필요한 최소 움직임).
-   *   짧은 시간 + 적은 움직임이 항상 더 높은 점수를 얻도록 설계.
+   * 모드별 승리 처리
+   *  - classic / daily: 기존 점수 공식 (시간/완벽 보너스) + 콤보는 이미 점수 누적에 반영됨
+   *  - versus: 더 많이 맞춘 플레이어 승, 동률이면 무승부
    */
   function win() {
     stopTimer();
+    state.isPlaying = false;
 
+    if (state.mode === 'versus') {
+      // 우승자 결정: 매칭 수 많은 사람. 동률이면 무승부(-1).
+      let winnerIndex = -1;
+      let max = -1;
+      let tied = false;
+      state.players.forEach((p, i) => {
+        if (p.matches > max) { max = p.matches; winnerIndex = i; tied = false; }
+        else if (p.matches === max) { tied = true; }
+      });
+      if (tied) winnerIndex = -1;
+
+      document.dispatchEvent(new CustomEvent('game:won', {
+        detail: {
+          mode: 'versus',
+          players: state.players.map(p => ({ ...p })),
+          winnerIndex,
+          time: state.time
+        }
+      }));
+      return;
+    }
+
+    // classic / daily
     const config = Difficulty.getConfig(state.difficulty);
     const pairs = state.matched / 2;
     const extraMoves = Math.max(0, state.moves - pairs);
@@ -285,10 +264,11 @@ const Game = (() => {
 
     state.score += timeBonus + perfectBonus;
 
-    state.isPlaying = false;
-
     document.dispatchEvent(new CustomEvent('game:won', {
       detail: {
+        mode: state.mode,
+        difficulty: state.difficulty,
+        seed: state.seed,
         score: state.score,
         moves: state.moves,
         time: state.time,
@@ -299,47 +279,69 @@ const Game = (() => {
     }));
   }
 
-
   // ==================== Public API ====================
 
   /**
-   * start(difficulty) - Start a new game at the specified difficulty level
-   * @param {string} difficulty - Game difficulty: 'easy', 'medium', or 'hard'
+   * Game.start(opts)
+   *   opts: 'easy'|'medium'|'hard' (호환)  또는
+   *         { mode, difficulty, seed?, players? }
+   *
+   *   mode 기본값 'classic'
+   *   versus 모드의 players 기본: [{ko:'플레이어 1', en:'Player 1'}, {ko:'플레이어 2', en:'Player 2'}]
    */
-  function start(difficulty) {
-    // 1. Initialize state with the specified difficulty
+  function start(opts) {
+    if (typeof opts === 'string') {
+      opts = { mode: 'classic', difficulty: opts };
+    }
+    const mode = opts.mode || 'classic';
+    const difficulty = opts.difficulty || 'medium';
+    const seed = opts.seed != null ? opts.seed : null;
+    const playersIn = opts.players || (mode === 'versus'
+      ? [{ ko: '플레이어 1', en: 'Player 1' }, { ko: '플레이어 2', en: 'Player 2' }]
+      : null);
+
+    // 상태 초기화
+    state.mode = mode;
     state.difficulty = difficulty;
+    state.seed = seed;
     state.score = 0;
     state.moves = 0;
     state.time = 0;
     state.matched = 0;
+    state.combo = 0;
+    state.comboMultiplier = 1;
     state.flippedCards = [];
     state.isLocked = false;
+    state.isPaused = false;
 
-    // 막누름 휴리스틱 상태 리셋
+    if (mode === 'versus') {
+      state.players = playersIn.map(p => ({
+        ko: p.ko, en: p.en,
+        score: 0, matches: 0, combo: 0
+      }));
+      state.currentPlayerIndex = 0;
+    } else {
+      state.players = null;
+      state.currentPlayerIndex = -1;
+    }
+
+    // 막누름 휴리스틱 리셋
     cooldownUntil = 0;
     recentClickTimes = [];
     recentPairIntraTimes = [];
     recentMatchOutcomes = [];
 
-    // 2. Get difficulty config from C team's Difficulty module
+    // 보드 생성
     const config = Difficulty.getConfig(difficulty);
     state.total = config.rows * config.cols;
+    cardsArray = Cards.create(config, seed);
 
-    // 3. Create shuffled cards using A team's Cards module
-    cardsArray = Cards.create(config);
-
-    // 4. Initialize the game board with card elements
     initializeCards();
-
-    // 4.5. Set the board grid class based on difficulty
     UI.setBoardClass(difficulty);
 
-    // 5. Set game as playing
     state.isPlaying = true;
 
-    // 6. Register click listener on game-board using event delegation
-    //    이전에 등록된 핸들러가 있으면 제거 (중복 등록 방지)
+    // 클릭 핸들러 (중복 방지)
     const gameBoard = document.getElementById('game-board');
     if (boardClickHandler) {
       gameBoard.removeEventListener('click', boardClickHandler);
@@ -352,66 +354,46 @@ const Game = (() => {
     };
     gameBoard.addEventListener('click', boardClickHandler);
 
-    // 7. Start the timer
     startTimer();
 
-    // 8. Emit 'game:started' custom event with difficulty detail
     document.dispatchEvent(new CustomEvent('game:started', {
-      detail: { difficulty: difficulty }
+      detail: { mode, difficulty, seed }
     }));
   }
 
-  /**
-   * reset() - Reset the game to initial state
-   * Ensures complete cleanup: timer stopped, state cleared, DOM cleared
-   */
   function reset() {
-    // 1. Stop the timer and clear interval reference
     stopTimer();
-    timerInterval = null;  // Explicit null to prevent timer duplication
-
-    // 2. Reset state object - all fields initialized
+    timerInterval = null;
+    state.mode = 'classic';
     state.difficulty = 'medium';
+    state.seed = null;
     state.score = 0;
     state.moves = 0;
     state.time = 0;
     state.matched = 0;
     state.total = 0;
+    state.combo = 0;
+    state.comboMultiplier = 1;
     state.isPlaying = false;
     state.isPaused = false;
     state.flippedCards = [];
     state.isLocked = false;
+    state.players = null;
+    state.currentPlayerIndex = -1;
 
-    // 3. Clear cards array reference
     cardsArray = [];
-
-    // 4. Clear the game board DOM completely
     const gameBoard = document.getElementById('game-board');
     gameBoard.innerHTML = '';
   }
 
-  /**
-   * getState() - Return a copy of the current game state
-   * @returns {Object} Copy of the state object
-   */
-  function getState() {
-    return { ...state };
-  }
+  function getState() { return { ...state }; }
 
-
-  /**
-   * pause() - 타이머/입력 일시정지
-   */
   function pause() {
     if (!state.isPlaying || state.isPaused) return;
     state.isPaused = true;
     stopTimer();
     document.dispatchEvent(new CustomEvent('game:paused'));
   }
-
-  /**
-   * resume() - 타이머/입력 재개
-   */
   function resume() {
     if (!state.isPlaying || !state.isPaused) return;
     state.isPaused = false;
@@ -419,13 +401,5 @@ const Game = (() => {
     document.dispatchEvent(new CustomEvent('game:resumed'));
   }
 
-
-  // ==================== Return Public API ====================
-  return {
-    start,
-    reset,
-    pause,
-    resume,
-    getState
-  };
+  return { start, reset, pause, resume, getState };
 })();

@@ -86,8 +86,12 @@ const Leaderboard = (function () {
     const ol = document.getElementById('leaderboard-list');
     if (ol) ol.innerHTML = '';
 
+    // 난이도 탭은 daily 모드에서 의미가 없으므로 일관성 위해 비활성화 가능
+    const diffTabs = document.querySelector('.leaderboard-tabs');
+    if (diffTabs) diffTabs.classList.toggle('hidden', currentScope === 'daily');
+
     if (currentScope === 'device') {
-      // 로컬 즉시 렌더
+      // 로컬 즉시 렌더 (난이도별)
       const list = Storage.getLeaderboard(currentDifficulty);
       if (list.length === 0) {
         setVisibility('leaderboard-empty', true);
@@ -97,17 +101,21 @@ const Leaderboard = (function () {
       return;
     }
 
-    // 글로벌 — Firebase 미설정 시 안내
+    // global / daily — Firebase 미설정 시 안내
     if (!Cloud.isReady()) {
       setVisibility('leaderboard-cloud-off', true);
       return;
     }
 
-    // 글로벌 — 비동기 로딩
     setVisibility('leaderboard-loading', true);
-    const list = await Cloud.getTop(currentDifficulty, 10);
 
-    // 늦게 도착한 응답이 다른 탭을 덮지 않게
+    let list;
+    if (currentScope === 'daily') {
+      list = await Cloud.getDailyTop(10);
+    } else {
+      list = await Cloud.getTop(currentDifficulty, 10);
+    }
+
     if (myToken !== renderToken) return;
 
     setVisibility('leaderboard-loading', false);

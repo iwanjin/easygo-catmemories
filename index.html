@@ -199,6 +199,52 @@
           </div>
         </div>
 
+        <!-- 게임 모드 선택 -->
+        <div class="mode-select">
+          <h3>모드 선택<span class="en-sub">Choose Mode</span></h3>
+          <div class="mode-grid">
+            <button class="mode-btn active" data-mode="classic">
+              <span class="mode-emoji">🎮</span>
+              <span class="mode-title">클래식<span class="en-sub">Classic</span></span>
+              <span class="mode-desc">기록을 남기는 정통 모드<span class="en-sub">The classic record run</span></span>
+            </button>
+            <button class="mode-btn" data-mode="daily">
+              <span class="mode-emoji">📅</span>
+              <span class="mode-title">오늘의 챌린지<span class="en-sub">Daily Challenge</span></span>
+              <span class="mode-desc">전 세계 같은 보드, 오늘 하루 한정<span class="en-sub">Same board worldwide today</span></span>
+            </button>
+            <button class="mode-btn" data-mode="versus">
+              <span class="mode-emoji">👯</span>
+              <span class="mode-title">짝꿍 대결<span class="en-sub">Versus</span></span>
+              <span class="mode-desc">한 기기에서 둘이 번갈아 도전<span class="en-sub">Two players, one device</span></span>
+            </button>
+          </div>
+
+          <!-- 선택한 모드의 친절한 설명 (어린이 친화) -->
+          <div class="mode-help-box" id="mode-help-box">
+            <div class="mh-card" data-mh-mode="classic">
+              <div class="mh-q">🎯 어떤 재미?<span class="en-sub">What's fun?</span></div>
+              <div class="mh-a">혼자서 점수에 도전하는 기본 모드예요. 잘 하면 명예의 전당에 이름이 올라가요!<span class="en-sub">Solo score challenge. Top scores get on the leaderboard!</span></div>
+              <div class="mh-q">🕹️ 어떻게 해?<span class="en-sub">How to play?</span></div>
+              <div class="mh-a">카드 두 장을 뒤집어서 같은 그림이면 짝 성공! 빠르게, 적게 틀릴수록 점수가 높아요. 연속으로 맞히면 콤보 보너스도 받아요!<span class="en-sub">Flip 2 cards for a match. Faster + fewer misses = more points. Streaks earn combo bonus!</span></div>
+            </div>
+
+            <div class="mh-card hidden" data-mh-mode="daily">
+              <div class="mh-q">🌍 어떤 재미?<span class="en-sub">What's fun?</span></div>
+              <div class="mh-a">오늘 하루, 전 세계 친구들이 모두 똑같은 카드 배치로 도전해요. 누가 더 잘하는지 비교할 수 있어요!<span class="en-sub">Everyone in the world plays the same board today — fair worldwide ranking!</span></div>
+              <div class="mh-q">📅 어떻게 해?<span class="en-sub">How to play?</span></div>
+              <div class="mh-a">보통(4×4) 한 판이에요. 클리어하면 오늘의 순위에 점수가 올라가요. 매일 자정(UTC)에 새 보드로 바뀌어요.<span class="en-sub">One Medium board. Score lands on today's chart. New board daily (UTC midnight).</span></div>
+            </div>
+
+            <div class="mh-card hidden" data-mh-mode="versus">
+              <div class="mh-q">👯 어떤 재미?<span class="en-sub">What's fun?</span></div>
+              <div class="mh-a">한 화면에서 둘이 번갈아 카드를 뒤집어요. 가족, 친구랑 누가 더 짝을 많이 맞추는지 시합!<span class="en-sub">Two players take turns on one screen. See who matches more!</span></div>
+              <div class="mh-q">🎲 어떻게 해?<span class="en-sub">How to play?</span></div>
+              <div class="mh-a">짝을 맞추면 한 번 더, 실패하면 짝꿍 차례예요. 모든 카드를 다 맞추면 짝을 더 많이 맞춘 사람이 승리!<span class="en-sub">Match → go again. Miss → other player's turn. Most matches wins!</span></div>
+            </div>
+          </div>
+        </div>
+
         <div class="difficulty-select">
           <h3>난이도 선택<span class="en-sub">Choose Difficulty</span></h3>
           <div class="difficulty-info">
@@ -215,6 +261,9 @@
               <span class="difficulty-desc">카드 24개 - 최고의 도전!<span class="en-sub">24 cards — biggest challenge!</span></span>
             </button>
           </div>
+          <p class="difficulty-locked-hint hidden" id="difficulty-locked-hint">
+            오늘의 챌린지는 보통 난이도로 고정이에요.<span class="en-sub">Daily Challenge is fixed at Medium.</span>
+          </p>
         </div>
 
         <div class="start-actions">
@@ -234,6 +283,25 @@
         <div id="moves">움직임<span class="en-sub-inline">Moves</span>: <span>0</span></div>
         <div id="timer">시간<span class="en-sub-inline">Time</span>: <span>00:00</span></div>
       </header>
+
+      <!-- 짝꿍 대결 모드용 점수판 (versus 모드일 때만 표시) -->
+      <div id="versus-board" class="versus-board hidden" aria-hidden="true">
+        <div class="versus-player" data-player="0">
+          <div class="vp-name"></div>
+          <div class="vp-stats"><span class="vp-matches">0</span> · <span class="vp-score">0</span><span class="en-sub-inline">pts</span></div>
+        </div>
+        <div class="versus-vs">VS</div>
+        <div class="versus-player" data-player="1">
+          <div class="vp-name"></div>
+          <div class="vp-stats"><span class="vp-matches">0</span> · <span class="vp-score">0</span><span class="en-sub-inline">pts</span></div>
+        </div>
+      </div>
+
+      <!-- 콤보 인디케이터 + 매칭 시 큰 배수 팝업 -->
+      <div id="combo-indicator" class="combo-indicator hidden" aria-hidden="true">
+        콤보<span class="en-sub-inline">Combo</span> ×<span id="combo-mult-text">1</span>
+      </div>
+      <div id="combo-burst" class="combo-burst" aria-hidden="true"></div>
 
       <div id="game-board"></div>
 
@@ -314,6 +382,7 @@
 
       <div class="leaderboard-scope-tabs" role="tablist" aria-label="기록 범위">
         <button class="lb-scope-tab is-active" role="tab" data-lb-scope="global">🌍 글로벌<span class="en-sub">Global</span></button>
+        <button class="lb-scope-tab" role="tab" data-lb-scope="daily">📅 오늘의 챌린지<span class="en-sub">Daily</span></button>
         <button class="lb-scope-tab" role="tab" data-lb-scope="device">📱 내 디바이스<span class="en-sub">My Device</span></button>
       </div>
 
@@ -383,6 +452,21 @@
       </div>
 
       <button id="sound-modal-ok" class="primary-btn modal-ok-btn">확인<span class="en-sub">OK</span></button>
+    </div>
+  </div>
+
+  <!-- 짝꿍 대결 결과 모달 -->
+  <div id="versus-end-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="versus-end-title">
+    <div class="modal-backdrop" data-modal-close></div>
+    <div class="modal-content versus-end-content">
+      <div class="modal-confetti" aria-hidden="true">🎊✨🎉</div>
+      <h2 id="versus-end-title">짝꿍 대결 결과<span class="en-sub">Versus Result</span></h2>
+      <div class="vs-winner-banner" id="vs-winner-banner"></div>
+      <div class="vs-scoreboard" id="vs-scoreboard"></div>
+      <div class="modal-actions">
+        <button id="vs-play-again-btn" class="primary-btn">다시 대결! 🔁<span class="en-sub">Rematch!</span></button>
+        <button id="vs-back-btn" class="secondary-btn">🏠 처음 화면<span class="en-sub">Home</span></button>
+      </div>
     </div>
   </div>
 

@@ -1,36 +1,22 @@
 // ============================================================
 // Cloud Module — Firestore 글로벌 리더보드
 //
-// 단일 책임: Firebase Web SDK v10 modular API를 동적으로 import해
+// 단일 책임: Firebase Web SDK v10 modular을 동적으로 import해
 // 글로벌 리더보드의 read/write를 제공.
 //
-// 키가 설정 안 되어 있으면(window.FIREBASE_READY === false) 모든
-// 함수는 "비활성" 신호를 반환해서 호출 측에서 graceful하게 처리한다.
+// 컬렉션:
+//   leaderboard         — classic 모드 기록 (난이도별)
+//   leaderboard_daily   — 일일 챌린지 기록 (dateKey YYYY-MM-DD별)
 //
-// 컬렉션 구조:
-//   leaderboard (단일 컬렉션)
-//     - difficulty: "easy" | "medium" | "hard"
-//     - name:       string (1..12자, 트리밍됨, 빈값이면 "익명")
-//     - score:      number
-//     - time:       number (초)
-//     - moves:      number
-//     - deviceId:   string (anonymous device fingerprint)
-//     - createdAt:  serverTimestamp
-//
-// TOP10 정렬: score desc, time asc, moves asc.
-//   → Firestore 콘솔에서 복합 인덱스 자동 안내됨.
+// versus 모드는 글로벌 저장 안 함(로컬 재미용).
 // ============================================================
 
 const Cloud = (function () {
-  let appPromise = null;
   let dbPromise = null;
-  let mod = null; // firestore 함수들 캐시
+  let mod = null;
 
-  function isReady() {
-    return !!window.FIREBASE_READY;
-  }
+  function isReady() { return !!window.FIREBASE_READY; }
 
-  // 첫 호출 시에만 SDK 동적 import — 게임 시작에는 영향 없음.
   async function ensure() {
     if (!isReady()) throw new Error('FIREBASE_NOT_CONFIGURED');
     if (dbPromise) return dbPromise;
@@ -45,45 +31,60 @@ const Cloud = (function () {
     return dbPromise;
   }
 
-  // ====== 디바이스 ID — 글로벌 기록을 "내 기록"으로 식별 ======
+  // ====== 디바이스 ID ======
   const DEVICE_KEY = 'memoCats_deviceId';
   function getDeviceId() {
     let id = localStorage.getItem(DEVICE_KEY);
     if (!id) {
       id = 'dev_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-      try {
-        localStorage.setItem(DEVICE_KEY, id);
-      } catch {}
+      try { localStorage.setItem(DEVICE_KEY, id); } catch {}
     }
     return id;
   }
 
-  // ====== 글로벌 기록 추가 ======
-  // entry: { difficulty, name, score, time, moves }
-  // 반환: { ok: true, id } | { ok: false, reason }
+  // ====== 오늘 날짜 키 (UTC YYYY-MM-DD) ======
+  // 모든 시간대에서 같은 보드를 보여주려면 UTC 기준이 맞다.
+  function todayKey() {
+    const d = new Date();
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  // ====== 기록 추가 ======
+  // entry: { mode, difficulty, name, score, time, moves, dateKey? }
   async function addEntry(entry) {
     if (!isReady()) return { ok: false, reason: 'not_configured' };
+    const mode = entry.mode || 'classic';
+    if (mode === 'versus') return { ok: false, reason: 'versus_local_only' };
+
     try {
       const db = await ensure();
-      const col = mod.collection(db, 'leaderboard');
-      const doc = await mod.addDoc(col, {
-        difficulty: String(entry.difficulty || 'easy'),
+      const collectionName = (mode === 'daily') ? 'leaderboard_daily' : 'leaderboard';
+      const col = mod.collection(db, collectionName);
+
+      const doc = {
+        difficulty: String(entry.difficulty || 'medium'),
         name: String(entry.name || '익명').slice(0, 12),
         score: Number(entry.score) || 0,
         time: Number(entry.time) || 0,
         moves: Number(entry.moves) || 0,
         deviceId: getDeviceId(),
         createdAt: mod.serverTimestamp()
-      });
-      return { ok: true, id: doc.id };
+      };
+      if (mode === 'daily') {
+        doc.dateKey = entry.dateKey || todayKey();
+      }
+      const ref = await mod.addDoc(col, doc);
+      return { ok: true, id: ref.id };
     } catch (e) {
       console.warn('[Cloud] addEntry failed', e);
       return { ok: false, reason: 'error', error: e };
     }
   }
 
-  // ====== 난이도별 TOP N 조회 ======
-  // 반환: [{ name, score, time, moves, deviceId, isMe }] | []
+  // ====== Classic 기록 TOP N (기존) ======
   async function getTop(difficulty, limitN = 10) {
     if (!isReady()) return [];
     try {
@@ -99,29 +100,51 @@ const Cloud = (function () {
       );
       const snap = await mod.getDocs(q);
       const me = getDeviceId();
-      return snap.docs.map((d) => {
-        const x = d.data();
-        return {
-          name: x.name || '익명',
-          score: x.score || 0,
-          time: x.time || 0,
-          moves: x.moves || 0,
-          deviceId: x.deviceId,
-          isMe: x.deviceId === me
-        };
-      });
+      return snap.docs.map(d => mapDoc(d, me));
     } catch (e) {
       console.warn('[Cloud] getTop failed', e);
       return [];
     }
   }
 
-  // ====== 백분위 계산 ======
-  // 단순화: 같은 난이도의 최근 200건 표본을 가져와 내 점수보다 낮은 비율 계산.
-  // 이상적이진 않지만, 글로벌 통계 추세를 대략 반영하고 비용도 작음.
-  // count() aggregation은 Spark(무료)에서도 쓸 수 있지만 인덱스 요구 + 추가 비용 우려가
-  // 있어 표본 기반으로 처리.
-  // 반환: { topPct: number(1..100), sampleSize: number } | null
+  // ====== Daily 기록 TOP N — 오늘 날짜 기준 ======
+  async function getDailyTop(limitN = 10, dateKey) {
+    if (!isReady()) return [];
+    const key = dateKey || todayKey();
+    try {
+      const db = await ensure();
+      const col = mod.collection(db, 'leaderboard_daily');
+      const q = mod.query(
+        col,
+        mod.where('dateKey', '==', key),
+        mod.orderBy('score', 'desc'),
+        mod.orderBy('time', 'asc'),
+        mod.orderBy('moves', 'asc'),
+        mod.limit(limitN)
+      );
+      const snap = await mod.getDocs(q);
+      const me = getDeviceId();
+      return snap.docs.map(d => mapDoc(d, me));
+    } catch (e) {
+      console.warn('[Cloud] getDailyTop failed', e);
+      return [];
+    }
+  }
+
+  function mapDoc(d, me) {
+    const x = d.data();
+    return {
+      name: x.name || '익명',
+      score: x.score || 0,
+      time: x.time || 0,
+      moves: x.moves || 0,
+      deviceId: x.deviceId,
+      dateKey: x.dateKey,
+      isMe: x.deviceId === me
+    };
+  }
+
+  // ====== 백분위 추정 (classic) ======
   async function getPercentile(difficulty, score) {
     if (!isReady()) return null;
     try {
@@ -134,10 +157,10 @@ const Cloud = (function () {
         mod.limit(200)
       );
       const snap = await mod.getDocs(q);
-      const all = snap.docs.map((d) => d.data().score || 0);
+      const all = snap.docs.map(d => d.data().score || 0);
       if (all.length === 0) return null;
-      const lower = all.filter((s) => s < score).length;
-      const ratio = lower / all.length; // 내 점수가 얼마나 위인가
+      const lower = all.filter(s => s < score).length;
+      const ratio = lower / all.length;
       const topPct = Math.max(1, Math.round((1 - ratio) * 100));
       return { topPct, sampleSize: all.length };
     } catch (e) {
@@ -149,8 +172,10 @@ const Cloud = (function () {
   return {
     isReady,
     getDeviceId,
+    todayKey,
     addEntry,
     getTop,
+    getDailyTop,
     getPercentile
   };
 })();
