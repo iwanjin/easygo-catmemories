@@ -321,7 +321,7 @@
       <p class="copyright-line">
         © 2026 냥냥 메모리즈<span class="en-sub">© 2026 Nyangnyang Memories</span>
       </p>
-      <p class="version-line">v.0429050626</p>
+      <p class="version-line">v.0510050626</p>
     </footer>
   </div>
 
@@ -404,9 +404,12 @@
         <p id="leaderboard-daily-notice" class="leaderboard-daily-notice hidden" aria-live="polite"></p>
         <p id="leaderboard-loading" class="leaderboard-loading hidden">⏳ 기록 불러오는 중...<span class="en-sub">Loading records...</span></p>
         <ol id="leaderboard-list" class="leaderboard-list"></ol>
-        <p id="leaderboard-empty" class="leaderboard-empty hidden">
-          🐾 아직 기록이 없어요. 첫 번째 챔피언이 되어보세요!<span class="en-sub">No records yet. Be the first champion!</span>
-        </p>
+        <div id="leaderboard-empty" class="leaderboard-empty hidden">
+          <p class="lb-empty-msg">🐾 아직 기록이 없어요. 첫 번째 챔피언이 되어보세요!<span class="en-sub">No records yet. Be the first champion!</span></p>
+          <button type="button" id="leaderboard-empty-challenge-btn" class="primary-btn lb-empty-challenge-btn">
+            🎮 바로 도전하기<span class="en-sub">Challenge Now</span>
+          </button>
+        </div>
         <p id="leaderboard-cloud-off" class="leaderboard-cloud-off hidden">
           ☁️ 글로벌 리더보드 준비 중이에요. 곧 다른 친구들의 기록도 볼 수 있어요!<span class="en-sub">Global leaderboard coming soon!</span>
         </p>

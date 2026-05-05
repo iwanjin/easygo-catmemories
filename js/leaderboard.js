@@ -137,7 +137,8 @@ const Leaderboard = (function () {
     if (ol) ol.innerHTML = '';
 
     const diffTabs = document.querySelector('.leaderboard-tabs');
-    if (diffTabs) diffTabs.classList.toggle('hidden', currentScope === 'daily');
+    // 일일 모드에선 난이도 탭이 의미 없지만 visibility만 숨겨 모달 높이 유지
+    if (diffTabs) diffTabs.classList.toggle('lb-tabs-invisible', currentScope === 'daily');
 
     renderDailyNotice(currentScope === 'daily');
 
@@ -242,6 +243,23 @@ const Leaderboard = (function () {
       closeBtn.addEventListener('click', () => {
         Sound.play('click');
         Modal.close();
+      });
+    }
+
+    const challengeBtn = document.getElementById('leaderboard-empty-challenge-btn');
+    if (challengeBtn) {
+      challengeBtn.addEventListener('click', () => {
+        Sound.play('click');
+        const opts = (currentScope === 'daily')
+          ? { mode: 'daily', difficulty: 'medium', seed: (Cloud.todayKey ? Cloud.todayKey() : '') }
+          : { mode: 'classic', difficulty: currentDifficulty };
+        // 모달 닫기 + 게임 시작 + 게임 화면 전환
+        Modal.close();
+        if (typeof Game !== 'undefined') {
+          if (Game.reset) Game.reset();
+          if (Game.start) Game.start(opts);
+        }
+        if (typeof UI !== 'undefined' && UI.showScreen) UI.showScreen('game');
       });
     }
 
