@@ -177,29 +177,68 @@
         <h1 class="game-title">🐱 냥냥 메모리<span class="en-sub">Memo Cats</span></h1>
         <p class="subtitle">같은 그림을 찾아 짝을 맞춰보세요!<span class="en-sub">Find matching pairs!</span></p>
 
-        <!-- 난이도별 최고 점수 요약 -->
-        <div class="best-score-summary-wrap">
-          <h3 class="bss-heading">
-            <span class="bss-mode-badge">🎮 클래식<span class="en-sub-inline">Classic</span></span>
-            난이도별 최고 점수<span class="en-sub">Best Score by Difficulty</span>
-          </h3>
-          <div class="best-score-summary" id="best-score-summary" aria-label="난이도별 최고 점수">
-            <div class="best-score-card" data-summary-difficulty="easy">
-              <div class="bsc-icon">🟢</div>
-              <div class="bsc-label">쉬움<span class="en-sub">Easy</span></div>
-              <div class="bsc-value"><span id="best-summary-easy">0</span><span class="bsc-unit">점</span></div>
-            </div>
-            <div class="best-score-card" data-summary-difficulty="medium">
-              <div class="bsc-icon">🟡</div>
-              <div class="bsc-label">보통<span class="en-sub">Medium</span></div>
-              <div class="bsc-value"><span id="best-summary-medium">0</span><span class="bsc-unit">점</span></div>
-            </div>
-            <div class="best-score-card" data-summary-difficulty="hard">
-              <div class="bsc-icon">🔴</div>
-              <div class="bsc-label">어려움<span class="en-sub">Hard</span></div>
-              <div class="bsc-value"><span id="best-summary-hard">0</span><span class="bsc-unit">점</span></div>
+        <!-- 모드별 최고 점수 / 안내 패널 -->
+        <div class="best-score-summary-wrap" id="best-score-summary-wrap">
+
+          <!-- 클래식: 난이도별 3카드 -->
+          <div class="bss-mode-view" data-bss-mode="classic">
+            <h3 class="bss-heading">
+              <span class="bss-mode-badge">🎮 클래식<span class="en-sub-inline">Classic</span></span>
+              난이도별 최고 점수<span class="en-sub">Best Score by Difficulty</span>
+            </h3>
+            <div class="best-score-summary" aria-label="난이도별 최고 점수">
+              <div class="best-score-card" data-summary-difficulty="easy">
+                <div class="bsc-icon">🟢</div>
+                <div class="bsc-label">쉬움<span class="en-sub">Easy</span></div>
+                <div class="bsc-value"><span id="best-summary-easy">0</span><span class="bsc-unit">점</span></div>
+              </div>
+              <div class="best-score-card" data-summary-difficulty="medium">
+                <div class="bsc-icon">🟡</div>
+                <div class="bsc-label">보통<span class="en-sub">Medium</span></div>
+                <div class="bsc-value"><span id="best-summary-medium">0</span><span class="bsc-unit">점</span></div>
+              </div>
+              <div class="best-score-card" data-summary-difficulty="hard">
+                <div class="bsc-icon">🔴</div>
+                <div class="bsc-label">어려움<span class="en-sub">Hard</span></div>
+                <div class="bsc-value"><span id="best-summary-hard">0</span><span class="bsc-unit">점</span></div>
+              </div>
             </div>
           </div>
+
+          <!-- 타임어택: 와이드 카드 (점수 + 최다 보드) -->
+          <div class="bss-mode-view hidden" data-bss-mode="timeattack">
+            <h3 class="bss-heading">
+              <span class="bss-mode-badge bss-mode-badge-ta">⏱️ 타임어택<span class="en-sub-inline">Time Attack</span></span>
+              내 최고 기록<span class="en-sub">My Best</span>
+            </h3>
+            <div class="best-score-summary best-score-summary-ta" aria-label="타임어택 최고 기록">
+              <div class="best-score-card best-score-card-wide">
+                <div class="bsc-icon">🎯</div>
+                <div class="bsc-label">최고 점수<span class="en-sub">Best Score</span></div>
+                <div class="bsc-value"><span id="best-summary-ta-score">0</span><span class="bsc-unit">점</span></div>
+              </div>
+              <div class="best-score-card best-score-card-wide">
+                <div class="bsc-icon">🟩</div>
+                <div class="bsc-label">최다 보드<span class="en-sub">Most Boards</span></div>
+                <div class="bsc-value"><span id="best-summary-ta-boards">0</span><span class="bsc-unit">판</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 오늘의 챌린지: 안내 메시지 -->
+          <div class="bss-mode-view hidden" data-bss-mode="daily">
+            <h3 class="bss-heading">
+              <span class="bss-mode-badge bss-mode-badge-daily">📅 오늘의 챌린지<span class="en-sub-inline">Daily</span></span>
+            </h3>
+            <p class="bss-info-msg">
+              📊 오늘의 점수는 명예의 전당에서 확인할 수 있어요!
+              <span class="en-sub">Check today's score in the Hall of Fame!</span>
+            </p>
+          </div>
+
+          <!-- 짝꿍 대결: 패널 자체를 숨김(빈 영역도 안 보이게) -->
+          <div class="bss-mode-view hidden" data-bss-mode="versus" hidden></div>
+
         </div>
 
         <!-- 게임 모드 선택 -->
@@ -336,7 +375,7 @@
       <p class="copyright-line">
         © 2026 냥냥 메모리즈<span class="en-sub">© 2026 Nyangnyang Memories</span>
       </p>
-      <p class="version-line">v.0632050626</p>
+      <p class="version-line">v.0637050626</p>
     </footer>
   </div>
 

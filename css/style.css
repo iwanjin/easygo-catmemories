@@ -1044,6 +1044,49 @@ h3 {
   margin-left: 1px;
 }
 
+/* ===== 모드별 best-score 패널 ===== */
+.bss-mode-view {
+  /* hidden은 전역 .hidden 클래스로 토글 */
+}
+/* 타임어택 배지 — 액센트(웜 골드) 톤 */
+.bss-mode-badge-ta {
+  background: linear-gradient(135deg, #FFEFD0 0%, #F4DDB5 100%);
+  color: #A88A55;
+}
+/* 일일 배지 — 베이지 톤 */
+.bss-mode-badge-daily {
+  background: linear-gradient(135deg, #FFF7E6 0%, #FFE7C0 100%);
+  color: #B68F4A;
+}
+/* 타임어택: 와이드 카드 2개 그리드 */
+.best-score-summary-ta {
+  grid-template-columns: repeat(2, 1fr);
+}
+.best-score-card-wide .bsc-value {
+  color: var(--color-accent);
+}
+.best-score-card-wide:hover {
+  border-color: var(--color-accent);
+}
+/* 일일 안내 메시지 */
+.bss-info-msg {
+  text-align: center;
+  background: linear-gradient(90deg, #FFF7E6 0%, #FFEFD0 100%);
+  border: 1px solid #F0DDB5;
+  color: #8A6B3A;
+  font-size: clamp(12px, 2.8vw, 14px);
+  line-height: 1.45;
+  padding: clamp(10px, 2vw, 14px) clamp(12px, 2.5vw, 18px);
+  border-radius: clamp(10px, 2vw, 14px);
+  margin: 0;
+}
+.bss-info-msg .en-sub {
+  display: block;
+  font-size: clamp(10px, 2.2vw, 12px);
+  color: #B08F5A;
+  margin-top: 3px;
+}
+
 /* 시작 화면 액션 그룹 (게임시작 + 명예의 전당 한 줄) */
 .start-actions {
   display: flex;
@@ -1063,10 +1106,16 @@ h3 {
   padding: clamp(10px, 2.1vw, 14px) clamp(16px, 3.5vw, 24px);
   font-size: clamp(13px, 3vw, 16px);
   min-width: clamp(140px, 38vw, 200px);
+  /* secondary-btn의 파란 그림자 오버라이드 — 액센트 색에 맞는 웜 골드 톤, 살짝 작게 */
+  box-shadow: 0 3px 0 rgba(184, 149, 112, 0.55);
 }
 .ghost-btn:hover {
   background: var(--color-accent);
   color: white;
+}
+.ghost-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 rgba(184, 149, 112, 0.55);
 }
 
 /* ========== 리더보드 모달 ========== */

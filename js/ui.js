@@ -274,12 +274,31 @@ const UI = (function() {
   }
 
   function refreshBestScoreSummary() {
+    // 클래식 — 난이도 3종
     const all = Storage.getAllBestScores();
     ['easy', 'medium', 'hard'].forEach((d) => {
       const el = document.getElementById(`best-summary-${d}`);
       if (el) {
         el.textContent = (all[d] || 0).toLocaleString();
       }
+    });
+    // 타임어택 — 점수 + 보드수
+    const ta = Storage.getBestTimeAttack ? Storage.getBestTimeAttack() : { score: 0, boardsCleared: 0 };
+    const taScore = document.getElementById('best-summary-ta-score');
+    const taBoards = document.getElementById('best-summary-ta-boards');
+    if (taScore) taScore.textContent = (ta.score || 0).toLocaleString();
+    if (taBoards) taBoards.textContent = (ta.boardsCleared || 0).toLocaleString();
+  }
+
+  // 모드 전환 시 best-score 패널 뷰 토글
+  function applyBestScoreView(mode) {
+    const wrap = document.getElementById('best-score-summary-wrap');
+    if (!wrap) return;
+    // versus는 패널 자체 숨김
+    wrap.classList.toggle('hidden', mode === 'versus');
+    // 4개 모드 뷰 중 해당 모드만 표시
+    document.querySelectorAll('.bss-mode-view').forEach((view) => {
+      view.classList.toggle('hidden', view.dataset.bssMode !== mode);
     });
   }
 
@@ -363,13 +382,19 @@ const UI = (function() {
       return;
     }
 
-    // === TimeAttack 모드: 항상 글로벌 등록 ===
+    // === TimeAttack 모드: 항상 글로벌 등록 + 로컬 최고 기록 갱신 ===
     if (mode === 'timeattack') {
+      const boards = detail.boardsCleared || 0;
       const result = {
         score, time, moves, difficulty, mode: 'timeattack',
-        boardsCleared: detail.boardsCleared || 0
+        boardsCleared: boards
       };
       lastResult = result;
+      // 로컬 최고 기록 갱신 — 메인 화면 패널 표시용
+      if (Storage.saveBestTimeAttack) {
+        Storage.saveBestTimeAttack({ score, boardsCleared: boards });
+        refreshBestScoreSummary();
+      }
       showNameInputModal(null, result, { mode: 'timeattack' });
       return;
     }
@@ -439,6 +464,9 @@ const UI = (function() {
     document.querySelectorAll('.mode-help-box .mh-card').forEach(c => {
       c.classList.toggle('hidden', c.dataset.mhMode !== mode);
     });
+    // 모드별 best-score 패널 뷰 토글 + 값 갱신
+    applyBestScoreView(mode);
+    refreshBestScoreSummary();
     // 일일/타임어택: 난이도 medium 고정 (다른 난이도 비활성화)
     const lockedHint = document.getElementById('difficulty-locked-hint');
     const fixedToMedium = (mode === 'daily' || mode === 'timeattack');

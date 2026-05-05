@@ -25,6 +25,38 @@ const Storage = (function() {
     };
   }
 
+  // ========== Timeattack 최고 점수 (점수+보드수 페어로 저장) ==========
+  function getBestTimeAttack() {
+    const key = `${PREFIX}best_timeattack`;
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return { score: 0, boardsCleared: 0 };
+      const obj = JSON.parse(raw);
+      return {
+        score: Number(obj.score) || 0,
+        boardsCleared: Number(obj.boardsCleared) || 0
+      };
+    } catch {
+      return { score: 0, boardsCleared: 0 };
+    }
+  }
+
+  // 더 높은 점수일 때만 갱신. 동점이면 보드수가 더 많을 때 갱신.
+  function saveBestTimeAttack(entry) {
+    const cur = getBestTimeAttack();
+    const newScore = Number(entry.score) || 0;
+    const newBoards = Number(entry.boardsCleared) || 0;
+    const better =
+      newScore > cur.score ||
+      (newScore === cur.score && newBoards > cur.boardsCleared);
+    if (!better) return false;
+    const key = `${PREFIX}best_timeattack`;
+    try {
+      localStorage.setItem(key, JSON.stringify({ score: newScore, boardsCleared: newBoards }));
+      return true;
+    } catch { return false; }
+  }
+
   function isMuted() {
     const key = `${PREFIX}muted`;
     const stored = localStorage.getItem(key);
@@ -116,6 +148,8 @@ const Storage = (function() {
     saveBestScore,
     getBestScore,
     getAllBestScores,
+    getBestTimeAttack,
+    saveBestTimeAttack,
     isMuted,
     setMuted,
     getVolume,
