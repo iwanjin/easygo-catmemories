@@ -1155,6 +1155,24 @@ h3 {
 .leaderboard-cloud-off { color: #B68FC7; }
 .leaderboard-loading   { color: #7B9DD8; }
 
+.leaderboard-daily-notice {
+  text-align: center;
+  background: linear-gradient(90deg, #FFF7E6 0%, #FFEFD0 100%);
+  border: 1px solid #F0DDB5;
+  color: #8A6B3A;
+  font-size: clamp(11px, 2.6vw, 13px);
+  line-height: 1.45;
+  padding: clamp(7px, 1.6vw, 10px) clamp(10px, 2vw, 14px);
+  border-radius: clamp(8px, 1.5vw, 10px);
+  margin: 0 0 clamp(8px, 1.8vw, 12px);
+}
+.leaderboard-daily-notice .en-sub {
+  display: block;
+  font-size: clamp(9px, 2vw, 11px);
+  color: #B08F5A;
+  margin-top: 2px;
+}
+
 /* ========== 글로벌/내디바이스 스코프 탭 ========== */
 .leaderboard-scope-tabs {
   display: flex;

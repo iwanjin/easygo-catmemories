@@ -379,7 +379,7 @@ const UI = (function() {
     const opts = { mode: selectedMode, difficulty: selectedDifficulty };
     if (selectedMode === 'daily') {
       opts.difficulty = 'medium';
-      // 시드 = 오늘 날짜 (UTC). Cloud에 동일 함수가 있으면 그걸 사용.
+      // 시드 = 오늘 날짜 (KST). Cloud에 동일 함수가 있으면 그걸 사용.
       opts.seed = Cloud.todayKey ? Cloud.todayKey() : new Date().toISOString().slice(0, 10);
     }
     return opts;

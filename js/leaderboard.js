@@ -47,6 +47,27 @@ const Leaderboard = (function () {
     if (el) el.classList.toggle('hidden', !show);
   }
 
+  function renderDailyNotice(show) {
+    const el = document.getElementById('leaderboard-daily-notice');
+    if (!el) return;
+    if (!show) {
+      el.classList.add('hidden');
+      el.innerHTML = '';
+      return;
+    }
+    const info = (Cloud.getDailyResetInfo && Cloud.getDailyResetInfo()) || null;
+    let koText, enText;
+    if (!info || info.isKST) {
+      koText = '📅 매일 자정(00:00 KST)에 새 보드와 순위로 초기화돼요';
+      enText = 'Resets daily at midnight (00:00 KST)';
+    } else {
+      koText = `📅 매일 한국 자정(00:00 KST) 기준 초기화 — 현재 시간대 기준 ${info.koLocal}`;
+      enText = `Resets at midnight KST — that's ${info.enLocal} in your local time`;
+    }
+    el.innerHTML = `${koText}<span class="en-sub">${enText}</span>`;
+    el.classList.remove('hidden');
+  }
+
   function renderRows(list) {
     const ol = document.getElementById('leaderboard-list');
     if (!ol) return;
@@ -117,6 +138,8 @@ const Leaderboard = (function () {
 
     const diffTabs = document.querySelector('.leaderboard-tabs');
     if (diffTabs) diffTabs.classList.toggle('hidden', currentScope === 'daily');
+
+    renderDailyNotice(currentScope === 'daily');
 
     if (currentScope === 'device') {
       // 로컬 — 실시간 구독 불필요

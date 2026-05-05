@@ -42,14 +42,28 @@ const Cloud = (function () {
     return id;
   }
 
-  // ====== 오늘 날짜 키 (UTC YYYY-MM-DD) ======
-  // 모든 시간대에서 같은 보드를 보여주려면 UTC 기준이 맞다.
+  // ====== 오늘 날짜 키 (KST YYYY-MM-DD) ======
+  // 한국 시간(UTC+9, DST 없음) 기준으로 자정에 초기화. 타깃 사용자가 한국이라
+  // 일일 챌린지 보드/리더보드가 한국 자정에 함께 갱신되는 게 자연스럽다.
   function todayKey() {
-    const d = new Date();
+    const d = new Date(Date.now() + 9 * 60 * 60 * 1000);
     const y = d.getUTCFullYear();
     const m = String(d.getUTCMonth() + 1).padStart(2, '0');
     const day = String(d.getUTCDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+  }
+
+  // 사용자 로컬 타임존에서 "00:00 KST"가 몇 시인지 한/영 라벨로 반환.
+  // KST=UTC+9 고정이라 항상 15:00 UTC = 00:00 KST.
+  function getDailyResetInfo() {
+    const sample = new Date();
+    sample.setUTCHours(15, 0, 0, 0);
+    let tz = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch {}
+    const isKST = tz === 'Asia/Seoul';
+    const ko = sample.toLocaleTimeString('ko-KR', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const en = sample.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return { isKST, koLocal: ko, enLocal: en };
   }
 
   // ====== 기록 추가 ======
@@ -233,6 +247,7 @@ const Cloud = (function () {
     isReady,
     getDeviceId,
     todayKey,
+    getDailyResetInfo,
     addEntry,
     getTop,
     getDailyTop,
