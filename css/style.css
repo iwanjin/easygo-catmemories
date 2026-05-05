@@ -175,6 +175,16 @@ h3 {
   min-width: clamp(60px, 25vw, 120px);
 }
 
+#timer.timer-urgent {
+  color: #E04A4A;
+  font-weight: 800;
+  animation: timerPulse 0.6s ease-in-out infinite;
+}
+@keyframes timerPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.06); }
+}
+
 /* ========== 버튼 ========== */
 .primary-btn, .secondary-btn, .difficulty-btn {
   border: none;

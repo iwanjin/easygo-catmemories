@@ -101,11 +101,14 @@ const Leaderboard = (function () {
       const displayName = rawName.trim() && rawName !== '익명'
         ? escapeHtml(rawName)
         : `${escapeHtml('익명')}<span class="en-sub-inline">Anonymous</span>`;
+      const metaHtml = (currentScope === 'timeattack')
+        ? `🟩 ${entry.boardsCleared || 0}판<span class="en-sub-inline">boards</span> · 🎯 ${entry.moves}회<span class="en-sub-inline">moves</span>`
+        : `⏱ ${formatTime(entry.time)} · 🎯 ${entry.moves}회<span class="en-sub-inline">moves</span>`;
       li.innerHTML = `
         <span class="lb-rank">${rankIcon(rank)}</span>
         <span class="lb-name">${displayName}${meBadge}</span>
         <span class="lb-score">${entry.score.toLocaleString()}점<span class="en-sub-inline">pts</span></span>
-        <span class="lb-meta">⏱ ${formatTime(entry.time)} · 🎯 ${entry.moves}회</span>
+        <span class="lb-meta">${metaHtml}</span>
       `;
       ol.appendChild(li);
     });
@@ -137,8 +140,9 @@ const Leaderboard = (function () {
     if (ol) ol.innerHTML = '';
 
     const diffTabs = document.querySelector('.leaderboard-tabs');
-    // 일일 모드에선 난이도 탭이 의미 없지만 visibility만 숨겨 모달 높이 유지
-    if (diffTabs) diffTabs.classList.toggle('lb-tabs-invisible', currentScope === 'daily');
+    // 난이도가 의미 없는 스코프(daily/timeattack)에선 visibility만 숨겨 모달 높이 유지
+    const noDifficulty = currentScope === 'daily' || currentScope === 'timeattack';
+    if (diffTabs) diffTabs.classList.toggle('lb-tabs-invisible', noDifficulty);
 
     renderDailyNotice(currentScope === 'daily');
 
@@ -177,6 +181,8 @@ const Leaderboard = (function () {
 
     if (currentScope === 'daily') {
       activeUnsub = await Cloud.subscribeDailyTop(10, onUpdate);
+    } else if (currentScope === 'timeattack') {
+      activeUnsub = await Cloud.subscribeTimeAttackTop(10, onUpdate);
     } else {
       activeUnsub = await Cloud.subscribeTop(currentDifficulty, 10, onUpdate);
     }
@@ -250,9 +256,14 @@ const Leaderboard = (function () {
     if (challengeBtn) {
       challengeBtn.addEventListener('click', () => {
         Sound.play('click');
-        const opts = (currentScope === 'daily')
-          ? { mode: 'daily', difficulty: 'medium', seed: (Cloud.todayKey ? Cloud.todayKey() : '') }
-          : { mode: 'classic', difficulty: currentDifficulty };
+        let opts;
+        if (currentScope === 'daily') {
+          opts = { mode: 'daily', difficulty: 'medium', seed: (Cloud.todayKey ? Cloud.todayKey() : '') };
+        } else if (currentScope === 'timeattack') {
+          opts = { mode: 'timeattack', difficulty: 'medium' };
+        } else {
+          opts = { mode: 'classic', difficulty: currentDifficulty };
+        }
         // 모달 닫기 + 게임 시작 + 게임 화면 전환
         Modal.close();
         if (typeof Game !== 'undefined') {

@@ -190,9 +190,19 @@ const UI = (function() {
   }
 
   function updateTimer(seconds) {
-    const mm = String(Math.floor(seconds / 60)).padStart(2, '0');
-    const ss = String(seconds % 60).padStart(2, '0');
-    document.querySelector('#timer span:not(.en-sub-inline)').textContent = `${mm}:${ss}`;
+    const s = (typeof Game !== 'undefined' && Game.getState) ? Game.getState() : {};
+    let display = seconds;
+    // timeattack 모드: 남은 시간 표시
+    if (s.timeLimit && s.timeLimit > 0) {
+      display = Math.max(0, s.timeLimit - seconds);
+    }
+    const mm = String(Math.floor(display / 60)).padStart(2, '0');
+    const ss = String(display % 60).padStart(2, '0');
+    const timer = document.getElementById('timer');
+    timer.querySelector('span:not(.en-sub-inline)').textContent = `${mm}:${ss}`;
+    // 마지막 10초 빨강 강조
+    const urgent = (s.timeLimit && s.timeLimit > 0 && display <= 10);
+    timer.classList.toggle('timer-urgent', !!urgent);
   }
 
   function setBoardClass(difficulty) {
@@ -281,22 +291,44 @@ const UI = (function() {
     if (badge) {
       if (opts.mode === 'daily') {
         badge.innerHTML = '오늘의 챌린지<span class="en-sub-inline">Daily</span>';
+      } else if (opts.mode === 'timeattack') {
+        badge.innerHTML = '타임어택<span class="en-sub-inline">Time Attack</span>';
       } else {
         badge.innerHTML = `${rank}위<span class="en-sub-inline">#${rank}</span>`;
       }
     }
     if (stats) {
-      stats.innerHTML = `
-        <span>🎯 ${result.score.toLocaleString()}점<span class="en-sub-inline">Score</span></span>
-        <span>⏱ ${formatTimeStr(result.time)}<span class="en-sub-inline">Time</span></span>
-        <span>🔄 ${result.moves}회<span class="en-sub-inline">Moves</span></span>
-      `;
+      if (opts.mode === 'timeattack') {
+        const boards = result.boardsCleared || 0;
+        stats.innerHTML = `
+          <span>🎯 ${result.score.toLocaleString()}점<span class="en-sub-inline">Score</span></span>
+          <span>🟩 ${boards}판<span class="en-sub-inline">Boards</span></span>
+          <span>🔄 ${result.moves}회<span class="en-sub-inline">Moves</span></span>
+        `;
+      } else {
+        stats.innerHTML = `
+          <span>🎯 ${result.score.toLocaleString()}점<span class="en-sub-inline">Score</span></span>
+          <span>⏱ ${formatTimeStr(result.time)}<span class="en-sub-inline">Time</span></span>
+          <span>🔄 ${result.moves}회<span class="en-sub-inline">Moves</span></span>
+        `;
+      }
     }
     if (message) {
-      const grade = gradeFromScore(result.score, result.difficulty);
-      const tierKo = grade.topPct ? `상위 ${grade.topPct}% — ` : '';
-      const tierEn = grade.topPct ? `Top ${grade.topPct}% — ` : '';
-      message.innerHTML = `${grade.emoji} ${tierKo}${grade.praise}<span class="en-sub">${tierEn}${grade.praiseEn}</span>`;
+      if (opts.mode === 'timeattack') {
+        const boards = result.boardsCleared || 0;
+        const ko = boards >= 3 ? '엄청난 집중력! 글로벌 순위에 등록해요!'
+                 : boards >= 1 ? '잘했어요! 점수를 글로벌 순위에 남겨봐요!'
+                 : '도전 완료! 이름을 남기면 다음에 더 잘 할 수 있어요!';
+        const en = boards >= 3 ? 'Incredible focus! Submit to global ranking!'
+                 : boards >= 1 ? 'Great run! Submit to global ranking!'
+                 : 'Round complete! Sign in for next time!';
+        message.innerHTML = `⚡ ${ko}<span class="en-sub">${en}</span>`;
+      } else {
+        const grade = gradeFromScore(result.score, result.difficulty);
+        const tierKo = grade.topPct ? `상위 ${grade.topPct}% — ` : '';
+        const tierEn = grade.topPct ? `Top ${grade.topPct}% — ` : '';
+        message.innerHTML = `${grade.emoji} ${tierKo}${grade.praise}<span class="en-sub">${tierEn}${grade.praiseEn}</span>`;
+      }
     }
     if (input) {
       input.value = '';
@@ -328,6 +360,17 @@ const UI = (function() {
       lastResult = result;
       // 일일은 로컬 저장 안 함, TOP10 평가도 클라우드에 위임
       showNameInputModal(null, result, { mode: 'daily' });
+      return;
+    }
+
+    // === TimeAttack 모드: 항상 글로벌 등록 ===
+    if (mode === 'timeattack') {
+      const result = {
+        score, time, moves, difficulty, mode: 'timeattack',
+        boardsCleared: detail.boardsCleared || 0
+      };
+      lastResult = result;
+      showNameInputModal(null, result, { mode: 'timeattack' });
       return;
     }
 
@@ -381,6 +424,8 @@ const UI = (function() {
       opts.difficulty = 'medium';
       // 시드 = 오늘 날짜 (KST). Cloud에 동일 함수가 있으면 그걸 사용.
       opts.seed = Cloud.todayKey ? Cloud.todayKey() : new Date().toISOString().slice(0, 10);
+    } else if (selectedMode === 'timeattack') {
+      opts.difficulty = 'medium';
     }
     return opts;
   }
@@ -394,16 +439,22 @@ const UI = (function() {
     document.querySelectorAll('.mode-help-box .mh-card').forEach(c => {
       c.classList.toggle('hidden', c.dataset.mhMode !== mode);
     });
-    // 일일 챌린지: 난이도 medium 고정 (다른 난이도 비활성화)
+    // 일일/타임어택: 난이도 medium 고정 (다른 난이도 비활성화)
     const lockedHint = document.getElementById('difficulty-locked-hint');
-    if (mode === 'daily') {
+    const fixedToMedium = (mode === 'daily' || mode === 'timeattack');
+    if (fixedToMedium) {
       document.querySelectorAll('.difficulty-btn').forEach(b => {
         const isMed = b.dataset.difficulty === 'medium';
         b.classList.toggle('is-disabled', !isMed);
         b.classList.toggle('active', isMed);
       });
       selectedDifficulty = 'medium';
-      if (lockedHint) lockedHint.classList.remove('hidden');
+      if (lockedHint) {
+        lockedHint.classList.remove('hidden');
+        lockedHint.innerHTML = (mode === 'daily')
+          ? '오늘의 챌린지는 보통 난이도로 고정이에요.<span class="en-sub">Daily Challenge is fixed at Medium.</span>'
+          : '타임어택은 보통 난이도로 고정이에요.<span class="en-sub">Time Attack is fixed at Medium.</span>';
+      }
     } else {
       document.querySelectorAll('.difficulty-btn').forEach(b => {
         b.classList.remove('is-disabled');
@@ -599,6 +650,9 @@ const UI = (function() {
         time: lastResult.time,
         moves: lastResult.moves
       };
+      if (mode === 'timeattack') {
+        payload.boardsCleared = lastResult.boardsCleared || 0;
+      }
 
       let localRank = -1;
       if (mode === 'classic') {
@@ -607,20 +661,23 @@ const UI = (function() {
           time: lastResult.time, moves: lastResult.moves
         });
       }
-      // daily는 로컬에 안 남기고 글로벌만 (오늘 날짜 키 자동 부여)
+      // daily/timeattack는 로컬에 안 남기고 글로벌만
 
       // 글로벌 — fire and forget
       Cloud.addEntry(payload);
 
       Modal.close();
       const diff = lastResult.difficulty;
-      const wasDaily = mode === 'daily';
+      const submittedMode = mode;
       lastResult = null;
 
       setTimeout(() => {
         const opts = {
           difficulty: diff,
-          scope: wasDaily ? 'daily' : (Cloud.isReady() ? 'global' : 'device'),
+          scope:
+            submittedMode === 'daily' ? 'daily' :
+            submittedMode === 'timeattack' ? 'timeattack' :
+            (Cloud.isReady() ? 'global' : 'device'),
           onClose: returnToStartAfterGame
         };
         if (localRank > 0) {
@@ -770,6 +827,16 @@ const UI = (function() {
       } else {
         hideVersusBoard();
       }
+    });
+
+    // 보드 클리어 (timeattack) — +500 보너스 안내
+    document.addEventListener('game:boardCleared', (e) => {
+      const n = (e.detail && e.detail.boardsCleared) || 0;
+      const bonus = (e.detail && e.detail.bonus) || 0;
+      showGameMessage({
+        ko: `🎉 보드 클리어! +${bonus} 보너스 (${n}판째)`,
+        en: `Board cleared! +${bonus} bonus (round ${n})`
+      });
     });
 
     // 게임 우승 시

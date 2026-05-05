@@ -1,11 +1,11 @@
 /**
  * Game Module - IIFE
- * 게임 상태/흐름 관리. 모드(classic / daily / versus) 분기.
+ * 게임 상태/흐름 관리. 모드(classic / daily / versus / timeattack) 분기.
  */
 const Game = (() => {
   // ==================== State ====================
   let state = {
-    mode: 'classic',          // 'classic' | 'daily' | 'versus'
+    mode: 'classic',          // 'classic' | 'daily' | 'versus' | 'timeattack'
     difficulty: 'medium',
     seed: null,               // daily 모드에서 결정론적 셔플 시드
     score: 0,                 // 1인 모드 점수
@@ -21,8 +21,14 @@ const Game = (() => {
     isLocked: false,
     // versus 전용
     players: null,            // [{name, en, score, matches, combo}]
-    currentPlayerIndex: -1
+    currentPlayerIndex: -1,
+    // timeattack 전용
+    timeLimit: 0,             // 0이면 무제한, >0이면 카운트다운
+    boardsCleared: 0          // 비운 보드 수
   };
+
+  const TIMEATTACK_DURATION = 60;
+  const BOARD_CLEAR_BONUS = 500;
 
   let timerInterval = null;
   let cardsArray = [];
@@ -53,7 +59,13 @@ const Game = (() => {
   // ==================== Timer ====================
   function startTimer() {
     if (timerInterval) clearInterval(timerInterval);
-    timerInterval = setInterval(() => { state.time++; }, 1000);
+    timerInterval = setInterval(() => {
+      state.time++;
+      // timeattack: 카운트다운이 0에 닿으면 종료
+      if (state.timeLimit > 0 && state.time >= state.timeLimit) {
+        timeAttackEnd();
+      }
+    }, 1000);
   }
   function stopTimer() {
     if (timerInterval) {
@@ -220,7 +232,48 @@ const Game = (() => {
 
   // ==================== Win ====================
   function checkWin() {
-    if (state.matched === state.total) win();
+    if (state.matched !== state.total) return;
+    if (state.mode === 'timeattack') {
+      // 보드 클리어: 보너스 + 콤보 유지 + 새 보드 즉시 깔기
+      state.boardsCleared += 1;
+      state.score += BOARD_CLEAR_BONUS;
+      refillBoardForTimeAttack();
+      document.dispatchEvent(new CustomEvent('game:boardCleared', {
+        detail: {
+          boardsCleared: state.boardsCleared,
+          bonus: BOARD_CLEAR_BONUS,
+          score: state.score
+        }
+      }));
+      return;
+    }
+    win();
+  }
+
+  function refillBoardForTimeAttack() {
+    state.matched = 0;
+    state.flippedCards = [];
+    state.isLocked = false;
+    const config = Difficulty.getConfig(state.difficulty);
+    // seed=null → 매번 다른 보드
+    cardsArray = Cards.create(config, null);
+    initializeCards();
+  }
+
+  function timeAttackEnd() {
+    if (!state.isPlaying) return;
+    stopTimer();
+    state.isPlaying = false;
+    document.dispatchEvent(new CustomEvent('game:won', {
+      detail: {
+        mode: 'timeattack',
+        difficulty: state.difficulty,
+        score: state.score,
+        moves: state.moves,
+        time: state.timeLimit,
+        boardsCleared: state.boardsCleared
+      }
+    }));
   }
 
   /**
@@ -313,6 +366,8 @@ const Game = (() => {
     state.flippedCards = [];
     state.isLocked = false;
     state.isPaused = false;
+    state.timeLimit = (mode === 'timeattack') ? TIMEATTACK_DURATION : 0;
+    state.boardsCleared = 0;
 
     if (mode === 'versus') {
       state.players = playersIn.map(p => ({
@@ -380,6 +435,8 @@ const Game = (() => {
     state.isLocked = false;
     state.players = null;
     state.currentPlayerIndex = -1;
+    state.timeLimit = 0;
+    state.boardsCleared = 0;
 
     cardsArray = [];
     const gameBoard = document.getElementById('game-board');

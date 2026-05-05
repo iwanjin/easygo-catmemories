@@ -218,6 +218,11 @@
               <span class="mode-title">짝꿍 대결<span class="en-sub">Versus</span></span>
               <span class="mode-desc">한 기기에서 둘이 번갈아 도전<span class="en-sub">Two players, one device</span></span>
             </button>
+            <button class="mode-btn" data-mode="timeattack">
+              <span class="mode-emoji">⏱️</span>
+              <span class="mode-title">타임어택<span class="en-sub">Time Attack</span></span>
+              <span class="mode-desc">60초 안에 점수 폭발!<span class="en-sub">Score blast in 60s!</span></span>
+            </button>
           </div>
 
           <!-- 선택한 모드의 친절한 설명 (어린이 친화) -->
@@ -241,6 +246,13 @@
               <div class="mh-a">한 화면에서 둘이 번갈아 카드를 뒤집어요. 가족, 친구랑 누가 더 짝을 많이 맞추는지 시합!<span class="en-sub">Two players take turns on one screen. See who matches more!</span></div>
               <div class="mh-q">🎲 어떻게 해?<span class="en-sub">How to play?</span></div>
               <div class="mh-a">짝을 맞추면 한 번 더, 실패하면 짝꿍 차례예요. 모든 카드를 다 맞추면 짝을 더 많이 맞춘 사람이 승리!<span class="en-sub">Match → go again. Miss → other player's turn. Most matches wins!</span></div>
+            </div>
+
+            <div class="mh-card hidden" data-mh-mode="timeattack">
+              <div class="mh-q">⏱️ 어떤 재미?<span class="en-sub">What's fun?</span></div>
+              <div class="mh-a">60초 카운트다운! 보드를 다 비우면 새 보드가 즉시 깔려요. 시간이 끝날 때까지 점수를 최대한 쌓으세요!<span class="en-sub">60-second countdown! Clear a board → instant new one. Pile up score before time runs out!</span></div>
+              <div class="mh-q">🚀 어떻게 해?<span class="en-sub">How to play?</span></div>
+              <div class="mh-a">보통(4×4) 한 판이에요. 보드 비울 때마다 +500 보너스 + 콤보 유지! 콤보 ×8까지 갈 수 있어요. 글로벌 순위에 점수가 올라가요.<span class="en-sub">One Medium board. Each clear: +500 bonus + combo kept! Combo up to ×8. Score lands on global ranking.</span></div>
             </div>
           </div>
         </div>
@@ -321,7 +333,7 @@
       <p class="copyright-line">
         © 2026 냥냥 메모리즈<span class="en-sub">© 2026 Nyangnyang Memories</span>
       </p>
-      <p class="version-line">v.0510050626</p>
+      <p class="version-line">v.0543050626</p>
     </footer>
   </div>
 
@@ -391,6 +403,7 @@
       <div class="leaderboard-scope-tabs" role="tablist" aria-label="기록 범위">
         <button class="lb-scope-tab is-active" role="tab" data-lb-scope="global">🌍 글로벌<span class="en-sub">Global</span></button>
         <button class="lb-scope-tab" role="tab" data-lb-scope="daily">📅 오늘의 챌린지<span class="en-sub">Daily</span></button>
+        <button class="lb-scope-tab" role="tab" data-lb-scope="timeattack">⏱️ 타임어택<span class="en-sub">Time Attack</span></button>
         <button class="lb-scope-tab" role="tab" data-lb-scope="device">📱 내 디바이스<span class="en-sub">My Device</span></button>
       </div>
 

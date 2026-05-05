@@ -75,7 +75,10 @@ const Cloud = (function () {
 
     try {
       const db = await ensure();
-      const collectionName = (mode === 'daily') ? 'leaderboard_daily' : 'leaderboard';
+      const collectionName =
+        (mode === 'daily') ? 'leaderboard_daily' :
+        (mode === 'timeattack') ? 'leaderboard_timeattack' :
+        'leaderboard';
       const col = mod.collection(db, collectionName);
 
       const doc = {
@@ -89,6 +92,9 @@ const Cloud = (function () {
       };
       if (mode === 'daily') {
         doc.dateKey = entry.dateKey || todayKey();
+      }
+      if (mode === 'timeattack') {
+        doc.boardsCleared = Number(entry.boardsCleared) || 0;
       }
       const ref = await mod.addDoc(col, doc);
       return { ok: true, id: ref.id };
@@ -117,6 +123,28 @@ const Cloud = (function () {
       return snap.docs.map(d => mapDoc(d, me));
     } catch (e) {
       console.warn('[Cloud] getTop failed', e);
+      return [];
+    }
+  }
+
+  // ====== TimeAttack 기록 TOP N ======
+  async function getTimeAttackTop(limitN = 10) {
+    if (!isReady()) return [];
+    try {
+      const db = await ensure();
+      const col = mod.collection(db, 'leaderboard_timeattack');
+      const q = mod.query(
+        col,
+        mod.orderBy('score', 'desc'),
+        mod.orderBy('time', 'asc'),
+        mod.orderBy('moves', 'asc'),
+        mod.limit(limitN)
+      );
+      const snap = await mod.getDocs(q);
+      const me = getDeviceId();
+      return snap.docs.map(d => mapDoc(d, me));
+    } catch (e) {
+      console.warn('[Cloud] getTimeAttackTop failed', e);
       return [];
     }
   }
@@ -153,6 +181,7 @@ const Cloud = (function () {
       score: x.score || 0,
       time: x.time || 0,
       moves: x.moves || 0,
+      boardsCleared: x.boardsCleared || 0,
       deviceId: x.deviceId,
       dateKey: x.dateKey,
       isMe: x.deviceId === me
@@ -185,6 +214,33 @@ const Cloud = (function () {
       return unsub;
     } catch (e) {
       console.warn('[Cloud] subscribeTop failed', e);
+      return () => {};
+    }
+  }
+
+  // ====== 실시간 구독 (TimeAttack) ======
+  async function subscribeTimeAttackTop(limitN, onUpdate) {
+    if (!isReady()) return () => {};
+    try {
+      const db = await ensure();
+      const col = mod.collection(db, 'leaderboard_timeattack');
+      const q = mod.query(
+        col,
+        mod.orderBy('score', 'desc'),
+        mod.orderBy('time', 'asc'),
+        mod.orderBy('moves', 'asc'),
+        mod.limit(limitN)
+      );
+      const me = getDeviceId();
+      const unsub = mod.onSnapshot(q, (snap) => {
+        const list = snap.docs.map(d => mapDoc(d, me));
+        onUpdate(list);
+      }, (err) => {
+        console.warn('[Cloud] subscribeTimeAttackTop error', err);
+      });
+      return unsub;
+    } catch (e) {
+      console.warn('[Cloud] subscribeTimeAttackTop failed', e);
       return () => {};
     }
   }
@@ -251,8 +307,10 @@ const Cloud = (function () {
     addEntry,
     getTop,
     getDailyTop,
+    getTimeAttackTop,
     getPercentile,
     subscribeTop,
-    subscribeDailyTop
+    subscribeDailyTop,
+    subscribeTimeAttackTop
   };
 })();
