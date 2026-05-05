@@ -1137,6 +1137,14 @@ h3 {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.lb-row .lb-flag {
+  display: inline-block;
+  margin-right: 5px;
+  font-size: 1.05em;
+  /* 모바일/맥/리눅스에선 국기 이모지로 렌더, 윈도우에선 ISO 코드 글자로 폴백됨 */
+  font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  vertical-align: middle;
+}
 .lb-row .lb-score {
   font-weight: bold;
   color: var(--color-primary);
@@ -1357,19 +1365,26 @@ h3 {
 /* ========== 영어 병기 (English subtitle for kids) ========== */
 .en-sub {
   display: block;
-  font-size: 0.65em;
-  color: rgba(70, 70, 70, 0.6);
+  font-size: 0.78em;
+  color: rgba(70, 70, 70, 0.62);
   font-weight: normal;
   margin-top: 2px;
-  line-height: 1.15;
+  line-height: 1.2;
   letter-spacing: 0.01em;
 }
 .en-sub-inline {
-  font-size: 0.7em;
-  color: rgba(70, 70, 70, 0.55);
+  font-size: 0.82em;
+  color: rgba(70, 70, 70, 0.58);
   margin-left: 4px;
   font-weight: normal;
   letter-spacing: 0.01em;
+}
+/* 제목(h1/h2/h3) 안의 영어 병기는 기존 비율 유지 — 제목이 이미 충분히 큼 */
+h1 .en-sub, h2 .en-sub, h3 .en-sub {
+  font-size: 0.65em;
+}
+h1 .en-sub-inline, h2 .en-sub-inline, h3 .en-sub-inline {
+  font-size: 0.7em;
 }
 
 /* ========== 모드 선택 (시작 화면) ========== */

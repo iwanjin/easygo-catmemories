@@ -53,6 +53,23 @@ const Cloud = (function () {
     return `${y}-${m}-${day}`;
   }
 
+  // 사용자 지역코드 (KR, US, JP, ...). navigator.language의 BCP47 region 부분 추출.
+  // "ko-KR" → "KR" / "en-US" → "US" / "zh-Hans-CN" → "CN" / "ko" → "" (region 없음)
+  // 빈 문자열로 저장되면 표시 시 기본 태극기로 폴백.
+  function getCountryCode() {
+    try {
+      const lang = (typeof navigator !== 'undefined' && navigator.language) || '';
+      const parts = lang.split('-');
+      for (let i = 1; i < parts.length; i++) {
+        const p = parts[i];
+        if (p.length === 2 && /^[a-zA-Z]{2}$/.test(p)) {
+          return p.toUpperCase();
+        }
+      }
+      return '';
+    } catch { return ''; }
+  }
+
   // 사용자 로컬 타임존에서 "00:00 KST"가 몇 시인지 한/영 라벨로 반환.
   // KST=UTC+9 고정이라 항상 15:00 UTC = 00:00 KST.
   function getDailyResetInfo() {
@@ -88,6 +105,7 @@ const Cloud = (function () {
         time: Number(entry.time) || 0,
         moves: Number(entry.moves) || 0,
         deviceId: getDeviceId(),
+        country: getCountryCode(),
         createdAt: mod.serverTimestamp()
       };
       if (mode === 'daily') {
@@ -182,6 +200,7 @@ const Cloud = (function () {
       time: x.time || 0,
       moves: x.moves || 0,
       boardsCleared: x.boardsCleared || 0,
+      country: x.country || '',
       deviceId: x.deviceId,
       dateKey: x.dateKey,
       isMe: x.deviceId === me
@@ -304,6 +323,7 @@ const Cloud = (function () {
     getDeviceId,
     todayKey,
     getDailyResetInfo,
+    getCountryCode,
     addEntry,
     getTop,
     getDailyTop,

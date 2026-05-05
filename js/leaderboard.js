@@ -33,6 +33,19 @@ const Leaderboard = (function () {
     return `${rank}<span class="en-sub-inline">#${rank}</span>`;
   }
 
+  // ISO 3166-1 alpha-2 → Unicode flag emoji.
+  // 알 수 없거나 빈 값이면 한국이 타깃 사용자라 태극기로 폴백.
+  function countryToFlag(cc) {
+    if (!cc || !/^[A-Za-z]{2}$/.test(cc)) {
+      return String.fromCodePoint(0x1F1F0, 0x1F1F7); // 🇰🇷
+    }
+    const upper = cc.toUpperCase();
+    return String.fromCodePoint(
+      0x1F1E6 + upper.charCodeAt(0) - 65,
+      0x1F1E6 + upper.charCodeAt(1) - 65
+    );
+  }
+
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, '&amp;')
@@ -101,12 +114,14 @@ const Leaderboard = (function () {
       const displayName = rawName.trim() && rawName !== '익명'
         ? escapeHtml(rawName)
         : `${escapeHtml('익명')}<span class="en-sub-inline">Anonymous</span>`;
+      const flag = countryToFlag(entry.country);
+      const flagLabel = (entry.country || 'KR').toUpperCase();
       const metaHtml = (currentScope === 'timeattack')
         ? `🟩 ${entry.boardsCleared || 0}판<span class="en-sub-inline">boards</span> · 🎯 ${entry.moves}회<span class="en-sub-inline">moves</span>`
         : `⏱ ${formatTime(entry.time)} · 🎯 ${entry.moves}회<span class="en-sub-inline">moves</span>`;
       li.innerHTML = `
         <span class="lb-rank">${rankIcon(rank)}</span>
-        <span class="lb-name">${displayName}${meBadge}</span>
+        <span class="lb-name"><span class="lb-flag" aria-label="${flagLabel}" title="${flagLabel}">${flag}</span>${displayName}${meBadge}</span>
         <span class="lb-score">${entry.score.toLocaleString()}점<span class="en-sub-inline">pts</span></span>
         <span class="lb-meta">${metaHtml}</span>
       `;
