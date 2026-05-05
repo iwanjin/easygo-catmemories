@@ -1044,9 +1044,21 @@ h3 {
   margin-left: 1px;
 }
 
-/* ===== 모드별 best-score 패널 ===== */
+/* ===== 모드별 best-score 패널 =====
+ * 모든 뷰를 같은 그리드 셀에 겹쳐 쌓아서 wrap 높이가 가장 큰 뷰(클래식)로
+ * 항상 고정. 모드 전환 시 패널 아래(모드 카드 이하)가 흔들리지 않음. */
+.best-score-summary-wrap {
+  display: grid;
+  grid-template-columns: 1fr;
+}
 .bss-mode-view {
-  /* hidden은 전역 .hidden 클래스로 토글 */
+  grid-column: 1;
+  grid-row: 1;
+}
+/* .hidden 전역 클래스(display:none) 대신 visibility만 숨겨서 셀 크기 보존 */
+.bss-mode-view.is-hidden {
+  visibility: hidden;
+  pointer-events: none;
 }
 /* 타임어택 배지 — 액센트(웜 골드) 톤 */
 .bss-mode-badge-ta {

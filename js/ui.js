@@ -290,15 +290,12 @@ const UI = (function() {
     if (taBoards) taBoards.textContent = (ta.boardsCleared || 0).toLocaleString();
   }
 
-  // 모드 전환 시 best-score 패널 뷰 토글
+  // 모드 전환 시 best-score 패널 뷰 토글.
+  // wrap은 그리드 스택이라 항상 같은 높이(클래식 기준) 유지 — 모드 카드 이하
+  // 위치가 흔들리지 않음. 비활성 뷰는 visibility로만 숨겨 셀 크기 보존.
   function applyBestScoreView(mode) {
-    const wrap = document.getElementById('best-score-summary-wrap');
-    if (!wrap) return;
-    // versus는 패널 자체 숨김
-    wrap.classList.toggle('hidden', mode === 'versus');
-    // 4개 모드 뷰 중 해당 모드만 표시
     document.querySelectorAll('.bss-mode-view').forEach((view) => {
-      view.classList.toggle('hidden', view.dataset.bssMode !== mode);
+      view.classList.toggle('is-hidden', view.dataset.bssMode !== mode);
     });
   }
 

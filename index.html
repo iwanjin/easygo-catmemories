@@ -181,7 +181,7 @@
         <div class="best-score-summary-wrap" id="best-score-summary-wrap">
 
           <!-- 클래식: 난이도별 3카드 -->
-          <div class="bss-mode-view" data-bss-mode="classic">
+          <div class="bss-mode-view is-hidden" data-bss-mode="classic">
             <h3 class="bss-heading">
               <span class="bss-mode-badge">🎮 클래식<span class="en-sub-inline">Classic</span></span>
               난이도별 최고 점수<span class="en-sub">Best Score by Difficulty</span>
@@ -206,7 +206,7 @@
           </div>
 
           <!-- 타임어택: 와이드 카드 (점수 + 최다 보드) -->
-          <div class="bss-mode-view hidden" data-bss-mode="timeattack">
+          <div class="bss-mode-view is-hidden" data-bss-mode="timeattack">
             <h3 class="bss-heading">
               <span class="bss-mode-badge bss-mode-badge-ta">⏱️ 타임어택<span class="en-sub-inline">Time Attack</span></span>
               내 최고 기록<span class="en-sub">My Best</span>
@@ -226,7 +226,7 @@
           </div>
 
           <!-- 오늘의 챌린지: 안내 메시지 -->
-          <div class="bss-mode-view hidden" data-bss-mode="daily">
+          <div class="bss-mode-view is-hidden" data-bss-mode="daily">
             <h3 class="bss-heading">
               <span class="bss-mode-badge bss-mode-badge-daily">📅 오늘의 챌린지<span class="en-sub-inline">Daily</span></span>
             </h3>
@@ -236,8 +236,8 @@
             </p>
           </div>
 
-          <!-- 짝꿍 대결: 패널 자체를 숨김(빈 영역도 안 보이게) -->
-          <div class="bss-mode-view hidden" data-bss-mode="versus" hidden></div>
+          <!-- 짝꿍 대결: 점수 개념 없음 → 빈 그리드 셀(공간만 유지) -->
+          <div class="bss-mode-view is-hidden" data-bss-mode="versus" aria-hidden="true"></div>
 
         </div>
 
@@ -375,7 +375,7 @@
       <p class="copyright-line">
         © 2026 냥냥 메모리즈<span class="en-sub">© 2026 Nyangnyang Memories</span>
       </p>
-      <p class="version-line">v.0637050626</p>
+      <p class="version-line">v.0643050626</p>
     </footer>
   </div>
 
