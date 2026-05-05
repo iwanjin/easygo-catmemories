@@ -988,6 +988,17 @@ h3 {
   margin: 0 0 clamp(4px, 1vw, 8px);
   letter-spacing: 0.2px;
 }
+.bss-mode-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #FFE7F0 0%, #F0E5FA 100%);
+  color: var(--color-primary);
+  padding: 2px clamp(6px, 1.4vw, 9px);
+  border-radius: 999px;
+  font-size: clamp(11px, 2.6vw, 13px);
+  font-weight: 700;
+  margin-right: 6px;
+  vertical-align: middle;
+}
 .best-score-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1089,12 +1100,17 @@ h3 {
 }
 
 .leaderboard-list-wrap {
-  margin: clamp(8px, 2vw, 12px) 0;
-  height: clamp(380px, 56vh, 560px);
+  margin: clamp(6px, 1.5vw, 10px) 0;
+  height: clamp(330px, 50vh, 500px);
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: #D8C9B5 transparent;
 }
+/* 리더보드 닫기 버튼 위 여백 살짝 줄여서 모달 전체 높이 축소 */
+#leaderboard-modal .modal-actions {
+  margin: clamp(8px, 1.5vw, 12px) 0 clamp(4px, 1vw, 6px);
+}
+#leaderboard-modal .modal-ok-btn { margin-top: 0; }
 .leaderboard-list-wrap::-webkit-scrollbar { width: 6px; }
 .leaderboard-list-wrap::-webkit-scrollbar-thumb {
   background: #D8C9B5;
