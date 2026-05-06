@@ -1070,6 +1070,11 @@ h3 {
   background: linear-gradient(135deg, #FFF7E6 0%, #FFE7C0 100%);
   color: #B68F4A;
 }
+/* 짝꿍 배지 — 라벤더/퍼플 톤 */
+.bss-mode-badge-versus {
+  background: linear-gradient(135deg, #EEE5FA 0%, #F5DDF0 100%);
+  color: #8E5BB8;
+}
 /* 타임어택: 와이드 카드 2개 그리드 */
 .best-score-summary-ta {
   grid-template-columns: repeat(2, 1fr);
@@ -1163,6 +1168,35 @@ h3 {
   font-size: clamp(10px, 2.2vw, 12px);
   color: #B08F5A;
   margin-top: 3px;
+}
+/* 짝꿍 대결 — 친구 명언 박스 */
+.bss-versus-quote {
+  margin: 0;
+  background: linear-gradient(90deg, #F4ECFA 0%, #FAEFF6 100%);
+  border: 1px solid #E2D2EE;
+  border-radius: clamp(10px, 2vw, 14px);
+  padding: clamp(10px, 2vw, 14px) clamp(12px, 2.5vw, 18px);
+  text-align: center;
+  color: #5D4577;
+}
+.bss-quote-ko {
+  margin: 0;
+  font-size: clamp(13px, 3vw, 15px);
+  line-height: 1.45;
+  font-weight: 600;
+}
+.bss-quote-en {
+  margin: clamp(3px, 0.7vw, 5px) 0 0;
+  font-size: clamp(11px, 2.4vw, 12px);
+  line-height: 1.4;
+  color: #8870A0;
+  font-style: italic;
+}
+.bss-quote-by {
+  margin: clamp(4px, 1vw, 6px) 0 0;
+  font-size: clamp(10px, 2.2vw, 11px);
+  color: #9A87B0;
+  font-weight: 500;
 }
 
 /* 시작 화면 액션 그룹 (게임시작 + 명예의 전당 한 줄) */

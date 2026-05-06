@@ -290,6 +290,55 @@ const UI = (function() {
     if (taBoards) taBoards.textContent = (ta.boardsCleared || 0).toLocaleString();
   }
 
+  // 짝꿍 대결 모드: 친구 명언 (한국어 메인 + 영어 병기 + 출처).
+  // 영어 명언은 한국어 번역, 한국 명언은 영어 번역으로 페어 구성. 모두 긍정적·어린이 친화.
+  const FRIEND_QUOTES = [
+    { ko: '친구는 두 몸에 깃든 하나의 영혼이다.',
+      en: 'A friend is one soul dwelling in two bodies.',
+      by: '아리스토텔레스 / Aristotle' },
+    { ko: '친구가 있으면 기쁨은 두 배가 되고 슬픔은 반이 된다.',
+      en: 'Friendship doubles our joy and divides our grief.',
+      by: '프랜시스 베이컨 / Francis Bacon' },
+    { ko: '어둠 속에서 친구와 걷는 것이 빛 속에서 혼자 걷는 것보다 좋다.',
+      en: 'Walking with a friend in the dark is better than walking alone in the light.',
+      by: '헬렌 켈러 / Helen Keller' },
+    { ko: '진정한 친구는 모든 걸 알고도 여전히 너를 좋아해 주는 사람이다.',
+      en: 'A friend is one who knows all about you and still loves you.',
+      by: '엘버트 허버드 / Elbert Hubbard' },
+    { ko: '좋은 친구는 별과 같아요 — 항상 보이진 않아도 늘 그 자리에 있어요.',
+      en: "Good friends are like stars — you don't always see them, but you know they're always there.",
+      by: '' },
+    { ko: '함께 웃을 수 있는 친구는 인생의 가장 큰 선물이에요.',
+      en: 'A friend who makes you laugh is the greatest gift of life.',
+      by: '' },
+    { ko: '진짜 친구는 마음으로 듣고, 침묵까지 이해해 줘요.',
+      en: 'A true friend listens with the heart and understands the silence.',
+      by: '' },
+    { ko: '좋은 친구가 함께라면 어떤 길도 멀지 않아요.',
+      en: 'No road is long with good company.',
+      by: '튀르키예 속담 / Turkish proverb' },
+    { ko: '친구의 미소 하나가 하루 전체를 환하게 만들어요.',
+      en: 'One smile from a friend can brighten a whole day.',
+      by: '' },
+    { ko: '같이 놀고 같이 웃으면 우정은 더 단단해져요.',
+      en: 'Playing and laughing together makes friendships stronger.',
+      by: '' },
+  ];
+
+  function renderVersusQuote() {
+    const el = document.getElementById('bss-versus-quote');
+    if (!el) return;
+    const q = FRIEND_QUOTES[Math.floor(Math.random() * FRIEND_QUOTES.length)];
+    const byHtml = q.by
+      ? `<footer class="bss-quote-by">— ${escapeForHtml(q.by)}</footer>`
+      : '';
+    el.innerHTML = `
+      <p class="bss-quote-ko">"${escapeForHtml(q.ko)}"</p>
+      <p class="bss-quote-en">"${escapeForHtml(q.en)}"</p>
+      ${byHtml}
+    `;
+  }
+
   // 시작 화면 일일 TOP1 위젯 — 실시간 구독으로 다른 사람 등록 시 자동 갱신.
   let _dailyTopUnsub = null;
 
@@ -369,6 +418,8 @@ const UI = (function() {
     document.querySelectorAll('.bss-mode-view').forEach((view) => {
       view.classList.toggle('is-hidden', view.dataset.bssMode !== mode);
     });
+    // versus 모드 — 클릭마다 새 명언 랜덤 표시
+    if (mode === 'versus') renderVersusQuote();
   }
 
   function showNameInputModal(rank, result, opts = {}) {
@@ -595,6 +646,8 @@ const UI = (function() {
       });
     });
     applyModeUI(selectedMode);
+    // versus 뷰가 hidden이라도 첫 명언을 미리 렌더해 첫 클릭 시 깜빡임 방지
+    renderVersusQuote();
 
     // 시작 버튼 → Game.start()
     document.getElementById('start-btn').addEventListener('click', () => {
