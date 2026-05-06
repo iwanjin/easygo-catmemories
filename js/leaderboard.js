@@ -46,6 +46,19 @@ const Leaderboard = (function () {
     );
   }
 
+  // IPv4 → "A.B.*.*" 형식. IPv6/알 수 없으면 빈 문자열.
+  function maskIp(ip) {
+    if (!ip || typeof ip !== 'string') return '';
+    const v4 = /^(\d{1,3}\.\d{1,3})\.\d{1,3}\.\d{1,3}$/.exec(ip);
+    if (v4) return `${v4[1]}.*.*`;
+    // IPv6: 첫 그룹만 노출
+    if (ip.includes(':')) {
+      const head = ip.split(':')[0];
+      return head ? `${head}:*:*:*` : '';
+    }
+    return '';
+  }
+
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, '&amp;')
@@ -116,12 +129,14 @@ const Leaderboard = (function () {
         : `${escapeHtml('익명')}<span class="en-sub-inline">Anonymous</span>`;
       const flag = countryToFlag(entry.country);
       const flagLabel = (entry.country || 'KR').toUpperCase();
+      const ipMasked = maskIp(entry.ip);
+      const ipHtml = ipMasked ? `<span class="lb-ip">${escapeHtml(ipMasked)}</span>` : '';
       const metaHtml = (currentScope === 'timeattack')
         ? `🟩 ${entry.boardsCleared || 0}판<span class="en-sub-inline">boards</span> · 🎯 ${entry.moves}회<span class="en-sub-inline">moves</span>`
         : `⏱ ${formatTime(entry.time)} · 🎯 ${entry.moves}회<span class="en-sub-inline">moves</span>`;
       li.innerHTML = `
         <span class="lb-rank">${rankIcon(rank)}</span>
-        <span class="lb-name"><span class="lb-flag" aria-label="${flagLabel}" title="${flagLabel}">${flag}</span>${displayName}${meBadge}</span>
+        <span class="lb-name"><span class="lb-flag" aria-label="${flagLabel}" title="${flagLabel}">${flag}</span>${displayName}${meBadge}${ipHtml}</span>
         <span class="lb-score">${entry.score.toLocaleString()}점<span class="en-sub-inline">pts</span></span>
         <span class="lb-meta">${metaHtml}</span>
       `;

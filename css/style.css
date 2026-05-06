@@ -1222,6 +1222,15 @@ h3 {
   font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
   vertical-align: middle;
 }
+.lb-row .lb-ip {
+  display: inline-block;
+  margin-left: 6px;
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 0.78em;
+  color: #999;
+  letter-spacing: 0.3px;
+  vertical-align: middle;
+}
 .lb-row .lb-score {
   font-weight: bold;
   color: var(--color-primary);
@@ -1421,6 +1430,25 @@ h3 {
 #player-name-input:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 4px rgba(216, 136, 159, 0.15);
+}
+#player-name-input.input-error,
+#player-name-input.input-error:focus {
+  border-color: #E04A4A;
+  box-shadow: 0 0 0 4px rgba(224, 74, 74, 0.18);
+}
+.name-input-error {
+  background: #FFE9E9;
+  border: 1px solid #F4B5B5;
+  color: #B83838;
+  border-radius: clamp(8px, 1.5vw, 10px);
+  padding: clamp(7px, 1.6vw, 10px) clamp(10px, 2vw, 14px);
+  font-size: clamp(12px, 2.8vw, 14px);
+  line-height: 1.4;
+  margin: 0 0 clamp(8px, 1.5vw, 10px);
+  text-align: left;
+}
+.name-input-error .en-sub {
+  color: #C76262;
 }
 
 /* 스크린리더 전용 */

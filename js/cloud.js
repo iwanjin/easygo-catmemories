@@ -53,6 +53,29 @@ const Cloud = (function () {
     return `${y}-${m}-${day}`;
   }
 
+  // ====== 클라이언트 IP 페치 ======
+  // 외부 API(api.ipify.org)에서 공인 IP 1회 페치 후 세션 캐시.
+  // 실패하면 빈 문자열. 클라이언트가 보내는 값이라 위변조 가능 — 정확한 IP
+  // 검증은 서버 없이는 불가. 어린이 게임 맥락에선 신뢰 신호로 보지 말고
+  // 닉네임 옆 partial 표시용 메타데이터로만 활용.
+  let cachedIp = null;
+  async function getClientIp() {
+    if (cachedIp !== null) return cachedIp;
+    try {
+      const res = await fetch('https://api.ipify.org?format=json', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
+      });
+      if (!res.ok) { cachedIp = ''; return ''; }
+      const data = await res.json();
+      cachedIp = String(data.ip || '').slice(0, 45); // IPv6 max 39 + 여유
+      return cachedIp;
+    } catch {
+      cachedIp = '';
+      return '';
+    }
+  }
+
   // 사용자 지역코드 (KR, US, JP, ...). navigator.language의 BCP47 region 부분 추출.
   // "ko-KR" → "KR" / "en-US" → "US" / "zh-Hans-CN" → "CN" / "ko" → "" (region 없음)
   // 빈 문자열로 저장되면 표시 시 기본 태극기로 폴백.
@@ -98,6 +121,9 @@ const Cloud = (function () {
         'leaderboard';
       const col = mod.collection(db, collectionName);
 
+      // IP 페치 (실패해도 빈 문자열로 진행 — 차단 X)
+      const ip = await getClientIp();
+
       const doc = {
         difficulty: String(entry.difficulty || 'medium'),
         name: String(entry.name || '익명').slice(0, 12),
@@ -106,6 +132,7 @@ const Cloud = (function () {
         moves: Number(entry.moves) || 0,
         deviceId: getDeviceId(),
         country: getCountryCode(),
+        ip: ip,
         createdAt: mod.serverTimestamp()
       };
       if (mode === 'daily') {
@@ -201,6 +228,7 @@ const Cloud = (function () {
       moves: x.moves || 0,
       boardsCleared: x.boardsCleared || 0,
       country: x.country || '',
+      ip: x.ip || '',
       deviceId: x.deviceId,
       dateKey: x.dateKey,
       isMe: x.deviceId === me

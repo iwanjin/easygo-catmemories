@@ -712,16 +712,47 @@ const UI = (function() {
       }, 280);
     }
 
+    function showNameError(show) {
+      const err = document.getElementById('name-input-error');
+      if (!err) return;
+      if (show) {
+        err.innerHTML = '🚫 금지된 단어가 사용되었습니다. 다른 이름을 입력해주세요.<span class="en-sub">Inappropriate word detected. Please use a different name.</span>';
+        err.classList.remove('hidden');
+        if (input) {
+          input.classList.add('input-error');
+          input.focus();
+          input.select();
+        }
+      } else {
+        err.classList.add('hidden');
+        err.innerHTML = '';
+        if (input) input.classList.remove('input-error');
+      }
+    }
+
+    if (input) {
+      // 사용자가 다시 입력하기 시작하면 에러 메시지 자동 해제
+      input.addEventListener('input', () => showNameError(false));
+    }
+
     if (form) {
       form.addEventListener('submit', (e) => {
         e.preventDefault();
+        const raw = input ? input.value : '';
+        if (typeof Profanity !== 'undefined' && Profanity.isProfane && Profanity.isProfane(raw)) {
+          showNameError(true);
+          Sound.play('mismatch'); // 거부 피드백
+          return;
+        }
         Sound.play('match'); // 저장 효과음
-        commitName(input ? input.value : '');
+        showNameError(false);
+        commitName(raw);
       });
     }
     if (skip) {
       skip.addEventListener('click', () => {
         Sound.play('click');
+        showNameError(false);
         commitName('익명');
       });
     }
