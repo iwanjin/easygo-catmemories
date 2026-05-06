@@ -318,6 +318,8 @@ const Leaderboard = (function () {
     open,
     render,
     selectTab,
-    selectScope
+    selectScope,
+    countryToFlag,
+    maskIp
   };
 })();

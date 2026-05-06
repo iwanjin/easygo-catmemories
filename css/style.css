@@ -1098,6 +1098,72 @@ h3 {
   color: #B08F5A;
   margin-top: 3px;
 }
+/* 일일 TOP 1 카드 */
+.bss-daily-card {
+  display: flex;
+  align-items: center;
+  gap: clamp(8px, 2vw, 14px);
+  background: linear-gradient(90deg, #FFF7E6 0%, #FFEFD0 100%);
+  border: 1px solid #F0DDB5;
+  border-radius: clamp(10px, 2vw, 14px);
+  padding: clamp(10px, 2vw, 14px) clamp(12px, 2.5vw, 16px);
+  text-align: left;
+}
+.bss-daily-rank {
+  font-size: clamp(20px, 4.8vw, 28px);
+  flex: 0 0 auto;
+  line-height: 1;
+}
+.bss-daily-name {
+  flex: 1 1 auto;
+  font-weight: 700;
+  color: var(--color-text);
+  font-size: clamp(13px, 3vw, 16px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bss-daily-score {
+  flex: 0 0 auto;
+  font-weight: 800;
+  color: #B68F4A;
+  font-size: clamp(15px, 3.6vw, 19px);
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+}
+.bss-daily-score .bsc-unit {
+  font-size: 0.7em;
+  font-weight: normal;
+  color: #B0925E;
+  margin-left: 1px;
+}
+/* 빈 상태 CTA — 클릭 시 즉시 일일 모드 시작 */
+.bss-daily-empty-cta {
+  display: block;
+  width: 100%;
+  border: 1px dashed #F0DDB5;
+  background: rgba(255, 247, 230, 0.5);
+  color: #8A6B3A;
+  padding: clamp(10px, 2vw, 14px) clamp(12px, 2.5vw, 18px);
+  border-radius: clamp(10px, 2vw, 14px);
+  font-family: inherit;
+  font-size: clamp(13px, 3vw, 15px);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+.bss-daily-empty-cta:hover {
+  background: rgba(255, 247, 230, 0.95);
+  transform: translateY(-1px);
+}
+.bss-daily-empty-cta .en-sub {
+  display: block;
+  font-size: clamp(10px, 2.2vw, 12px);
+  color: #B08F5A;
+  margin-top: 3px;
+}
 
 /* 시작 화면 액션 그룹 (게임시작 + 명예의 전당 한 줄) */
 .start-actions {

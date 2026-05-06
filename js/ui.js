@@ -290,6 +290,78 @@ const UI = (function() {
     if (taBoards) taBoards.textContent = (ta.boardsCleared || 0).toLocaleString();
   }
 
+  // 시작 화면 일일 TOP1 위젯 — 실시간 구독으로 다른 사람 등록 시 자동 갱신.
+  let _dailyTopUnsub = null;
+
+  function renderDailyTopCard(state, top) {
+    const el = document.getElementById('bss-daily-top');
+    if (!el) return;
+    if (state === 'loading') {
+      el.innerHTML = '<p class="bss-info-msg">⏳ 불러오는 중...<span class="en-sub">Loading...</span></p>';
+      return;
+    }
+    if (state === 'cloud-off') {
+      el.innerHTML = '<p class="bss-info-msg">☁️ 글로벌 리더보드 준비 중이에요.<span class="en-sub">Cloud not ready yet.</span></p>';
+      return;
+    }
+    if (state === 'empty') {
+      el.innerHTML = `
+        <button type="button" class="bss-daily-empty-cta" id="bss-daily-cta">
+          📅 오늘 첫 도전자가 되어보세요!<span class="en-sub">Be today's first challenger!</span>
+        </button>
+      `;
+      const cta = document.getElementById('bss-daily-cta');
+      if (cta) {
+        cta.addEventListener('click', () => {
+          Sound.play('click');
+          selectedMode = 'daily';
+          applyModeUI('daily');
+          // 게임 즉시 시작
+          lastStartOpts = buildStartOpts();
+          if (Game.reset) Game.reset();
+          Game.start(lastStartOpts);
+          showScreen('game');
+        });
+      }
+      return;
+    }
+    if (state === 'ok' && top) {
+      const flag = (Leaderboard && Leaderboard.countryToFlag) ? Leaderboard.countryToFlag(top.country) : '🇰🇷';
+      const flagLabel = (top.country || 'KR').toUpperCase();
+      const rawName = top.name || '익명';
+      const displayName = rawName.trim() && rawName !== '익명'
+        ? escapeForHtml(rawName)
+        : '익명<span class="en-sub-inline">Anonymous</span>';
+      el.innerHTML = `
+        <div class="bss-daily-card">
+          <div class="bss-daily-rank">🥇</div>
+          <div class="bss-daily-name"><span class="lb-flag" aria-label="${flagLabel}" title="${flagLabel}">${flag}</span>${displayName}</div>
+          <div class="bss-daily-score">${(top.score || 0).toLocaleString()}<span class="bsc-unit">점</span><span class="en-sub-inline">pts</span></div>
+        </div>
+      `;
+      return;
+    }
+  }
+
+  async function subscribeDailyTopWidget() {
+    renderDailyTopCard('loading');
+    if (!Cloud.isReady || !Cloud.isReady()) {
+      renderDailyTopCard('cloud-off');
+      return;
+    }
+    if (_dailyTopUnsub) {
+      try { _dailyTopUnsub(); } catch {}
+      _dailyTopUnsub = null;
+    }
+    _dailyTopUnsub = await Cloud.subscribeDailyTop(1, (list) => {
+      if (!list || list.length === 0) {
+        renderDailyTopCard('empty');
+      } else {
+        renderDailyTopCard('ok', list[0]);
+      }
+    });
+  }
+
   // 모드 전환 시 best-score 패널 뷰 토글.
   // wrap은 그리드 스택이라 항상 같은 높이(클래식 기준) 유지 — 모드 카드 이하
   // 위치가 흔들리지 않음. 비활성 뷰는 visibility로만 숨겨 셀 크기 보존.
@@ -911,5 +983,6 @@ const UI = (function() {
 
   return { showScreen, updateScore, updateMoves, updateTimer,
            setBoardClass, showEndScreen, bindEvents, subscribeToGameEvents,
-           bindSoundSettings, bindLeaderboard, refreshBestScoreSummary };
+           bindSoundSettings, bindLeaderboard, refreshBestScoreSummary,
+           subscribeDailyTopWidget };
 })();
