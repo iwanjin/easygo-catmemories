@@ -1,0 +1,119 @@
+rules_version = '2';                                                                                                   
+  service cloud.firestore {                                                                                              
+    match /databases/{database}/documents {                                                                              
+                                                                                                                         
+      // ===== 클래식 모드 =====                                                                                         
+      match /leaderboard/{doc} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(
+                           ['difficulty','name','score','time','moves','deviceId','createdAt','country','ip'])
+                     && request.resource.data.score is number
+                     && request.resource.data.score >= 0
+                     && request.resource.data.score <= 100000
+                     && request.resource.data.name is string
+                     && request.resource.data.name.size() > 0
+                     && request.resource.data.name.size() <= 12
+                     && request.resource.data.difficulty in ['easy','medium','hard']
+                     && request.resource.data.time is number
+                     && request.resource.data.time >= 0
+                     && request.resource.data.moves is number
+                     && request.resource.data.moves >= 0
+                     && request.resource.data.deviceId is string
+                     && request.resource.data.deviceId.size() <= 64
+                     && request.resource.data.createdAt is timestamp
+                     && request.resource.data.country is string
+                     && request.resource.data.country.size() <= 4
+                     && request.resource.data.ip is string
+                     && request.resource.data.ip.size() <= 45;
+        allow update, delete: if false;
+      }
+
+      // ===== 일일 챌린지 =====
+      match /leaderboard_daily/{doc} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(
+                           ['difficulty','name','score','time','moves','deviceId','createdAt','dateKey','country','ip'])
+                     && request.resource.data.score is number
+                     && request.resource.data.score >= 0
+                     && request.resource.data.score <= 100000
+                     && request.resource.data.name is string
+                     && request.resource.data.name.size() > 0
+                     && request.resource.data.name.size() <= 12
+                     && request.resource.data.difficulty is string
+                     && request.resource.data.time is number
+                     && request.resource.data.time >= 0
+                     && request.resource.data.moves is number
+                     && request.resource.data.moves >= 0
+                     && request.resource.data.deviceId is string
+                     && request.resource.data.deviceId.size() <= 64
+                     && request.resource.data.createdAt is timestamp
+                     && request.resource.data.dateKey is string
+                     && request.resource.data.dateKey.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+                     && request.resource.data.country is string
+                     && request.resource.data.country.size() <= 4
+                     && request.resource.data.ip is string
+                     && request.resource.data.ip.size() <= 45;
+        allow update, delete: if false;
+      }
+
+      // ===== 타임어택 =====
+      match /leaderboard_timeattack/{doc} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(
+
+  ['difficulty','name','score','time','moves','deviceId','createdAt','boardsCleared','country','ip'])
+                     && request.resource.data.score is number
+                     && request.resource.data.score >= 0
+                     && request.resource.data.score <= 100000
+                     && request.resource.data.name is string
+                     && request.resource.data.name.size() > 0
+                     && request.resource.data.name.size() <= 12
+                     && request.resource.data.difficulty is string
+                     && request.resource.data.time is number
+                     && request.resource.data.time >= 0
+                     && request.resource.data.moves is number
+                     && request.resource.data.moves >= 0
+                     && request.resource.data.deviceId is string
+                     && request.resource.data.deviceId.size() <= 64
+                     && request.resource.data.createdAt is timestamp
+                     && request.resource.data.boardsCleared is number
+                     && request.resource.data.boardsCleared >= 0
+                     && request.resource.data.boardsCleared <= 100                                                       
+                     && request.resource.data.country is string                                                          
+                     && request.resource.data.country.size() <= 4                                                        
+                     && request.resource.data.ip is string                                                               
+                     && request.resource.data.ip.size() <= 45;
+        allow update, delete: if false;
+      }
+
+      // ===== 두더지 잡기 (minigames/mole) =====
+      match /leaderboard_mole/{doc} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(
+                           ['name','score','hits','perfects','hammer','deviceId','createdAt','country','ip'])
+                     && request.resource.data.score is number
+                     && request.resource.data.score >= 1
+                     && request.resource.data.score <= 1000000
+                     && request.resource.data.name is string
+                     && request.resource.data.name.size() > 0
+                     && request.resource.data.name.size() <= 12
+                     && request.resource.data.hits is number
+                     && request.resource.data.hits >= 0
+                     && request.resource.data.hits <= 10000
+                     && request.resource.data.perfects is number
+                     && request.resource.data.perfects >= 0
+                     && request.resource.data.perfects <= 10000
+                     && request.resource.data.hammer is string
+                     && request.resource.data.hammer.size() <= 30
+                     && request.resource.data.deviceId is string
+                     && request.resource.data.deviceId.size() <= 64
+                     && request.resource.data.createdAt is timestamp
+                     && request.resource.data.country is string
+                     && request.resource.data.country.size() <= 4
+                     && request.resource.data.ip is string
+                     && request.resource.data.ip.size() <= 45;
+        allow update, delete: if false;
+      }
+
+    }
+  }
